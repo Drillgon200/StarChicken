@@ -5,12 +5,14 @@
 #include <atomic>
 #include <thread>
 
-#pragma pack(8)
+#pragma pack(push, 8)
 struct Context {
 	void* rip, * rsp;
 	void* rbx, * rbp, * r12, * r13, * r14, * r15, * rdi, * rsi;
 	__m128i xmm6, xmm7, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15;
 };
+#pragma pack(pop)
+
 extern thread_local Context threadCtx;
 extern "C" void save_registers(Context& c);
 extern "C" void load_registers(Context& c);
@@ -95,7 +97,7 @@ namespace job {
 		//The queue of empty available jobs, implemented as a ring buffer
 		Job* jobPool[queueSize];
 		std::vector<JobQueue*> queues;
-		Job** currentJobsByThread;
+		Job** currentJobsByThread = nullptr;
 		std::atomic<uint32_t> activeJobCount{ 0 };
 
 		std::vector<std::thread> threadpool;

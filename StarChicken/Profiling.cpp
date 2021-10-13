@@ -16,11 +16,11 @@ namespace profiling {
 		tidGetter = tid;
 		threadCount = tCount;
 		data.resize(threadCount);
-		for (int i = 0; i < threadCount; i++) {
+		for (uint32_t i = 0; i < threadCount; i++) {
 			data[i].reserve(initialBufferSize);
 		}
 		const char* mainPath = "F:\\vulkan_shooter\\logs\\";
-		int length = strlen(mainPath) + strlen(name) + strlen(".json") + 1;
+		size_t length = strlen(mainPath) + strlen(name) + strlen(".json") + 1;
 		filePath = new char[length];
 		strcpy_s(filePath, length, mainPath);
 		strcat_s(filePath, length, name);
@@ -34,7 +34,7 @@ namespace profiling {
 		out.open(filePath);
 		out << "[";
 		bool first = true;
-		for (int i = 0; i < threadCount; i++) {
+		for (uint32_t i = 0; i < threadCount; i++) {
 			for (ProfData& dat : data[i]) {
 				uint64_t micro = std::chrono::time_point_cast<std::chrono::microseconds>(dat.time).time_since_epoch().count();
 				if (!first) {

@@ -11,7 +11,7 @@
 #endif
 
 //Yeah we're just going to unoptimize this whole class. Stupid? Probably, but also have no idea what I'm doing otherwise
-#pragma optimize("", off);
+#pragma optimize("", off)
 
 thread_local Context threadCtx{};
 
@@ -202,9 +202,10 @@ namespace job {
 
 
 	Job* JobSystem::steal_job(JobQueue& queue) {
-		queue.stealId = (queue.stealId + 1) % queues.size();
+		uint32_t queueSize = static_cast<uint32_t>(queues.size());
+		queue.stealId = (queue.stealId + 1) % queueSize;
 		if (queue.stealId == queue.id) {
-			queue.stealId = (queue.stealId + 1) % queues.size();
+			queue.stealId = (queue.stealId + 1) % queueSize;
 		}
 		JobQueue& stealQueue = *queues[queue.stealId];
 
@@ -301,7 +302,7 @@ namespace job {
 	}
 
 	uint16_t JobSystem::thread_count() {
-		return threadpool.size();
+		return static_cast<uint16_t>(threadpool.size());
 	}
 
 	bool JobSystem::is_done() {

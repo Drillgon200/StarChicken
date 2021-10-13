@@ -79,7 +79,7 @@ namespace ecs {
 		void deleteEntity(Entity ent) override {
 			if (componentsByEntity.find(ent) != componentsByEntity.end()) {
 				uint16_t idx = componentsByEntity[ent];
-				uint16_t end = components.size() - 1;
+				uint16_t end = static_cast<uint16_t>(components.size()) - 1;
 				if (end == idx) {
 					components.pop_back();
 					componentsByEntity.erase(ent);
