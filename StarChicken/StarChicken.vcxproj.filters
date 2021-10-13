@@ -18,5 +18,60 @@
     <ClCompile Include="Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="EntityComponentSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicsPipeline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JobSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Profiling.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Vulkan Shooter\resources\shaders\compile.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\Vulkan Shooter\resources\shaders\triangle.vert">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="..\Vulkan Shooter\resources\shaders\triangle.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="resources\shaders\compile.bat">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="resources\shaders\triangle.frag" />
+    <None Include="resources\shaders\triangle.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\Vulkan Shooter\resources\textures\orbus.png">
+      <Filter>Source Files</Filter>
+    </Image>
+    <Image Include="resources\textures\orbus.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="EntityComponentSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Profiling.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JobSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="ContextUtils.asm">
+      <Filter>Source Files</Filter>
+    </MASM>
   </ItemGroup>
 </Project>

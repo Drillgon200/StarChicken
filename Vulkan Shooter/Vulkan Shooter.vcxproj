@@ -168,8 +168,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="EntityComponentSystem.cpp" />
-    <ClCompile Include="GraphicsPipeline.cpp" />
     <ClCompile Include="HelloTriangleApplication.cpp" />
     <ClCompile Include="ShaderManager.cpp" />
     <ClCompile Include="FiberDemo.cpp" />
