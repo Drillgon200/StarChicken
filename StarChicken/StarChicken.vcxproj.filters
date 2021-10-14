@@ -15,19 +15,22 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine.cpp">
+    <ClCompile Include="src\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EntityComponentSystem.cpp">
+    <ClCompile Include="src\EntityComponentSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GraphicsPipeline.cpp">
+    <ClCompile Include="src\graphics\GraphicsPipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="JobSystem.cpp">
+    <ClCompile Include="src\JobSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Profiling.cpp">
+    <ClCompile Include="src\Profiling.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\ShaderManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -56,21 +59,24 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EntityComponentSystem.h">
+    <ClInclude Include="src\EntityComponentSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Profiling.h">
+    <ClInclude Include="src\Profiling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="JobSystem.h">
+    <ClInclude Include="src\JobSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine.h">
+    <ClInclude Include="src\Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\ShaderManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="ContextUtils.asm">
+    <MASM Include="src\ContextUtils.asm">
       <Filter>Source Files</Filter>
     </MASM>
   </ItemGroup>

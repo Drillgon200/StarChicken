@@ -173,17 +173,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Engine.cpp" />
-    <ClCompile Include="EntityComponentSystem.cpp" />
-    <ClCompile Include="GraphicsPipeline.cpp" />
-    <ClCompile Include="JobSystem.cpp" />
-    <ClCompile Include="Profiling.cpp" />
+    <ClCompile Include="src\Engine.cpp" />
+    <ClCompile Include="src\EntityComponentSystem.cpp" />
+    <ClCompile Include="src\graphics\GraphicsPipeline.cpp" />
+    <ClCompile Include="src\JobSystem.cpp" />
+    <ClCompile Include="src\Profiling.cpp" />
+    <ClCompile Include="src\graphics\ShaderManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Vulkan Shooter\resources\shaders\compile.bat" />
     <None Include="..\Vulkan Shooter\resources\shaders\triangle.frag" />
     <None Include="..\Vulkan Shooter\resources\shaders\triangle.vert" />
-    <MASM Include="ContextUtils.asm">
+    <MASM Include="src\ContextUtils.asm">
       <FileType>Document</FileType>
     </MASM>
     <None Include="resources\shaders\compile.bat" />
@@ -195,10 +196,11 @@
     <Image Include="resources\textures\orbus.png" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine.h" />
-    <ClInclude Include="EntityComponentSystem.h" />
-    <ClInclude Include="JobSystem.h" />
-    <ClInclude Include="Profiling.h" />
+    <ClInclude Include="src\Engine.h" />
+    <ClInclude Include="src\EntityComponentSystem.h" />
+    <ClInclude Include="src\JobSystem.h" />
+    <ClInclude Include="src\Profiling.h" />
+    <ClInclude Include="src\graphics\ShaderManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
