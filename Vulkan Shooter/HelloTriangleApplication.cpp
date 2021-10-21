@@ -7,7 +7,6 @@
 #include <stb_image.h>
 #include <tiny_obj_loader.h>
 #include <GLFW/glfw3.h>
-#include <>
 
 #include <iostream>
 #include <stdexcept>

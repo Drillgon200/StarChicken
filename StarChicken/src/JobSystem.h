@@ -23,114 +23,12 @@ extern "C" void load_registers_arg(Context& ctx, void* arg);
 
 namespace job {
 
-	const uint32_t JOB_STACK_SIZE = 128 * 1024;
-	//I like to keep sizes in powers of 2
-	const uint32_t queueSize = 1 << 8;
-	const uint32_t queueSizeMask = queueSize - 1;
-
-	//Should be thread local for all threads, so it doesn't need to be a member variable
-	extern thread_local int32_t currentThreadId;
-
-	class JobSystem;
-	struct JobDecl;
-
-	volatile class Job {
-	private:
-		friend class JobSystem;
-		friend struct JobCounter;
-
-		JobSystem* system;
-		JobDecl* currentTask;
-		bool active = false;
-		char* data = nullptr;
-		char* stackPointer = nullptr;
-		Context ctx{};
-	public:
-		
-		Job(JobSystem* sys);
-		~Job();
-
-		//This function handles releasing the job and context switching back after the task ends
-		static void run(Job* job);
-	};
-
-	volatile struct JobQueue {
-		std::thread::id threadId;
-		uint32_t id;
-		Job** jobs;
-		std::atomic<int32_t> top;
-		std::atomic<int32_t> bottom;
-		uint32_t stealId;
-
-		JobQueue(std::thread::id tid, uint32_t id);
-		~JobQueue();
-	};
-	volatile struct JobCounter {
-		Job* job;
-		std::atomic<int32_t> counter;
-
-		JobCounter(Job* job, int32_t count);
-
-		void decrement();
-	};
-
-	volatile struct JobDecl {
-		JobCounter* counter;
-		void (*func)(void*);
-		void* arg;
-
-		JobDecl();
-
-		JobDecl(void (*f)(void*), void* argument);
-
-		JobDecl(void (*f)(void));
-	};
-
-	volatile class JobSystem {
-	private:
-		friend struct JobCounter;
-		friend class Job;
-
-		std::atomic<uint32_t> jobPoolReadIdx;
-		std::atomic<uint32_t> jobPoolMaxReadIdx;
-		std::atomic<uint32_t> jobPoolWriteIdx;
-		//The queue of empty available jobs, implemented as a ring buffer
-		Job* jobPool[queueSize];
-		std::vector<JobQueue*> queues;
-		Job** currentJobsByThread = nullptr;
-		std::atomic<uint32_t> activeJobCount{ 0 };
-
-		std::vector<std::thread> threadpool;
-		std::atomic<bool> finished = false;
-
-		void push_job(JobQueue& queue, Job& job);
-		Job* pop_job(JobQueue& queue);
-		Job* acquire_job();
-		void release_job(Job* job);
-		Job* steal_job(JobQueue& queue);
-		Job* getJob(uint32_t index);
-
-		void threadFunc(uint32_t idx);
-
-		void cleanup();
-	public:
-		void init_job_system(uint32_t threadCount);
-		void start_entry_point(JobDecl& decl);
-		void end_job_system();
-		void start_jobs_and_wait_for_counter(JobDecl* jobs, uint32_t jobCount);
-		void start_job(JobDecl& decl);
-		void start_job(JobDecl& decl, uint32_t tid);
-		void yield_job();
-		uint16_t thread_count();
-		bool is_done();
-	};
-
-//Lock a regular full spin lock
-#define SPIN_LOCK(lock) job::RAIISpinLocker spin_locker##__LINE__(&lock);
+	//Lock a regular full spin lock
+#define SPIN_LOCK(lock) job::RAIISpinLocker spin_locker##__LINE__(&lock);static_assert(true, "")
 //Read lock a reader writer spin lock
-#define RSPIN_LOCK(lock) job::RAIIRSpinLocker spin_locker##__LINE__(&lock);
+#define RSPIN_LOCK(lock) job::RAIIRSpinLocker spin_locker##__LINE__(&lock);static_assert(true, "")
 //Write lock a reader writer spin lock
-#define WSPIN_LOCK(lock) job::RAIIWSpinLocker spin_locker##__LINE__(&lock);
+#define WSPIN_LOCK(lock) job::RAIIWSpinLocker spin_locker##__LINE__(&lock);static_assert(true, "")
 
 	class RWSpinLock {
 	private:
@@ -231,6 +129,115 @@ namespace job {
 			this->lock->unlock();
 		}
 	};
+
+	const uint32_t JOB_STACK_SIZE = 128 * 1024;
+	//I like to keep sizes in powers of 2
+	const uint32_t queueSize = 1 << 8;
+	const uint32_t queueSizeMask = queueSize - 1;
+
+	//Should be thread local for all threads, so it doesn't need to be a member variable
+	extern thread_local int32_t currentThreadId;
+	int32_t this_thread_id();
+
+	class JobSystem;
+	struct JobDecl;
+
+	volatile class Job {
+	private:
+		friend class JobSystem;
+		friend struct JobCounter;
+
+		JobSystem* system;
+		JobDecl* currentTask;
+		bool active = false;
+		char* data = nullptr;
+		char* stackPointer = nullptr;
+		Context ctx{};
+	public:
+		
+		Job(JobSystem* sys);
+		~Job();
+
+
+
+		//This function handles releasing the job and context switching back after the task ends
+		static void run(Job* job);
+	};
+
+	volatile struct JobQueue {
+		std::thread::id threadId;
+		uint32_t id;
+		Job** jobs;
+		std::atomic<int32_t> top;
+		std::atomic<int32_t> bottom;
+		uint32_t stealId;
+
+		JobQueue(std::thread::id tid, uint32_t id);
+		~JobQueue();
+	};
+	volatile struct JobCounter {
+		Job* job;
+		std::atomic<int32_t> counter;
+
+		JobCounter(Job* job, int32_t count);
+
+		void decrement();
+	};
+
+	volatile struct JobDecl {
+		JobCounter* counter;
+		void (*func)(void*);
+		void* arg;
+
+		JobDecl();
+
+		JobDecl(void (*f)(void*), void* argument);
+
+		JobDecl(void (*f)(void));
+	};
+
+	volatile class JobSystem {
+	private:
+		friend struct JobCounter;
+		friend class Job;
+
+		std::atomic<uint32_t> jobPoolReadIdx;
+		std::atomic<uint32_t> jobPoolMaxReadIdx;
+		std::atomic<uint32_t> jobPoolWriteIdx;
+		//The queue of empty available jobs, implemented as a ring buffer
+		Job* jobPool[queueSize];
+		std::vector<JobQueue*> queues;
+		Job** currentJobsByThread = nullptr;
+		std::atomic<uint32_t> activeJobCount{ 0 };
+
+		std::vector<std::thread> threadpool;
+		std::atomic<bool> finished = false;
+
+		SpinLock lock{};
+
+		void push_job(JobQueue& queue, Job& job);
+		Job* pop_job(JobQueue& queue);
+		Job* acquire_job();
+		void release_job(Job* job);
+		Job* steal_job(JobQueue& queue);
+		Job* getJob(uint32_t index);
+
+		void threadFunc(uint32_t idx);
+
+		void cleanup();
+	public:
+		Job* thisjob();
+		void init_job_system(uint32_t threadCount);
+		void start_entry_point(JobDecl& decl);
+		void end_job_system();
+		void start_jobs_and_wait_for_counter(JobDecl* jobs, uint32_t jobCount);
+		void start_job(JobDecl& decl);
+		void start_job(JobDecl& decl, uint32_t tid);
+		void yield_job();
+		uint16_t thread_count();
+		bool is_done();
+	};
+
 }
 
 #pragma optimize("", on)
