@@ -123,23 +123,25 @@
       <Optimization>Disabled</Optimization>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\include;F:\vulkan_shooter\glm;F:\vulkan_shooter\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\include;F:\vulkan_shooter\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <SupportJustMyCode>true</SupportJustMyCode>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Lib;F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\lib-vc2019;F:\vulkan_shooter\sdk\1.2.176.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OptimizeReferences>false</OptimizeReferences>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -153,10 +155,10 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
-      <EnableFiberSafeOptimizations>false</EnableFiberSafeOptimizations>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\include;F:\vulkan_shooter\glm;F:\vulkan_shooter\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\include;F:\vulkan_shooter\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
@@ -168,14 +170,16 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Lib;F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\lib-vc2019;F:\vulkan_shooter\sdk\1.2.176.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\EntityComponentSystem.cpp" />
     <ClCompile Include="src\graphics\GraphicsPipeline.cpp" />
+    <ClCompile Include="src\graphics\VkUtil.cpp" />
     <ClCompile Include="src\JobSystem.cpp" />
     <ClCompile Include="src\Profiling.cpp" />
     <ClCompile Include="src\graphics\ShaderManager.cpp" />
@@ -198,6 +202,7 @@
   <ItemGroup>
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\EntityComponentSystem.h" />
+    <ClInclude Include="src\graphics\VkUtil.h" />
     <ClInclude Include="src\JobSystem.h" />
     <ClInclude Include="src\Profiling.h" />
     <ClInclude Include="src\graphics\ShaderManager.h" />

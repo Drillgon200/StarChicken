@@ -27,8 +27,8 @@ save_registers PROC
 	movups [rcx+80+16*8], xmm14
 	movups [rcx+80+16*9], xmm15
 
-	;Literally no clue why we zero eax, but it was in the post I'm following
-	xor eax, eax
+	;Return 0
+	xor rax, rax
 	ret
 save_registers ENDP
 
@@ -60,7 +60,7 @@ load_registers PROC
 	;Push r8 so the instruction pointer gets loaded
 	push r8
 
-	xor eax, eax
+	xor rax, rax
 	ret
 load_registers ENDP
 
@@ -115,7 +115,7 @@ swap_registers PROC
 
 	push r8
 
-	xor eax, eax
+	xor rax, rax
 	ret
 swap_registers ENDP
 	
@@ -149,7 +149,7 @@ load_registers_arg PROC
 	;Push r8 so the instruction pointer gets loaded
 	push r8
 
-	xor eax, eax
+	xor rax, rax
 	ret
 load_registers_arg ENDP
 END

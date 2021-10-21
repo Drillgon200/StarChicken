@@ -5,11 +5,12 @@
 #include <fstream>
 #include <vector>
 
-#define PROFILING_ENABLE 1
+#define PROFILING_ENABLE 0
 #if PROFILING_ENABLE
-#define SCOPE_PROF(name) profiling::Profiler scope_profiler##__LINE__(name);
+//the static assert simply requires a semicolon, which is to make visual studio not auto indent after a macro call. Also makes it more consistent I think.
+#define SCOPE_PROF(name) profiling::Profiler scope_profiler##__LINE__(name);static_assert(true, "")
 #else
-#define SCOPE_PROF(name)
+#define SCOPE_PROF(name)static_assert(true, "")
 #endif
 #define FUNC_PROF() SCOPE_PROF(__FUNCTION__)
 
