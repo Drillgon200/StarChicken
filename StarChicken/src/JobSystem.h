@@ -4,24 +4,34 @@
 #include <vector>
 #include <atomic>
 #include <thread>
+#include <iostream>
 
-#pragma pack(push, 8)
-struct Context {
+#pragma pack(push, 4)
+struct alignas(16) Context {
 	void* rip, * rsp;
 	void* rbx, * rbp, * r12, * r13, * r14, * r15, * rdi, * rsi;
 	__m128i xmm6, xmm7, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15;
+	uint32_t mxcsrControlWord, x87fpuControlWord;
+	void* stackBase, * stackLimit, * deallocationStack;
+	uint32_t guaranteedStackBytes;
+	uint32_t padding;
+	void* fiberData;
 };
 #pragma pack(pop)
 
-extern thread_local Context threadCtx;
+#pragma optimize("", off)
+
 extern "C" void save_registers(Context& c);
 extern "C" void load_registers(Context& c);
 extern "C" void swap_registers(Context& oldCtx, Context& newCtx);
 extern "C" void load_registers_arg(Context& ctx, void* arg);
-
-#pragma optimize("", off)
+extern "C" void swap_registers_arg(Context & oldCtx, Context & newCtx, void* arg);
 
 namespace job {
+
+#define SUSPENDED 0
+#define ACTIVE 1
+#define ENDED 2
 
 	//Lock a regular full spin lock
 #define SPIN_LOCK(lock) job::RAIISpinLocker spin_locker##__LINE__(&lock);static_assert(true, "")
@@ -74,20 +84,22 @@ namespace job {
 		std::atomic<bool> locked;
 	public:
 		SpinLock() {
-			locked = false;
+			locked.store(false, std::memory_order_relaxed);
+		}
+		~SpinLock() {
 		}
 
 		void lock() {
 			while (true) {
-				if (!locked.exchange(true, std::memory_order_acquire)) {
+				if (!locked.exchange(true, std::memory_order_seq_cst)) {
 					break;
 				}
-				while (locked.load(std::memory_order_relaxed));
+				while (locked.load(std::memory_order_seq_cst));
 			}
 		}
 
 		void unlock() {
-			locked.store(false, std::memory_order_release);
+			locked.store(false, std::memory_order_seq_cst);
 		}
 	};
 
@@ -135,15 +147,15 @@ namespace job {
 	const uint32_t queueSize = 1 << 8;
 	const uint32_t queueSizeMask = queueSize - 1;
 
-	//Should be thread local for all threads, so it doesn't need to be a member variable
 	extern thread_local int32_t currentThreadId;
+	extern Context* threadCtx;
 	int32_t this_thread_id();
 
 	class JobSystem;
 	struct JobDecl;
 
 	volatile class Job {
-	private:
+	public:
 		friend class JobSystem;
 		friend struct JobCounter;
 
@@ -152,6 +164,7 @@ namespace job {
 		bool active = false;
 		char* data = nullptr;
 		char* stackPointer = nullptr;
+		uint32_t state = ENDED;
 		Context ctx{};
 	public:
 		
@@ -164,7 +177,7 @@ namespace job {
 		static void run(Job* job);
 	};
 
-	volatile struct JobQueue {
+	/*volatile struct JobQueue {
 		std::thread::id threadId;
 		uint32_t id;
 		Job** jobs;
@@ -174,7 +187,7 @@ namespace job {
 
 		JobQueue(std::thread::id tid, uint32_t id);
 		~JobQueue();
-	};
+	};*/
 	volatile struct JobCounter {
 		Job* job;
 		std::atomic<int32_t> counter;
@@ -201,12 +214,19 @@ namespace job {
 		friend struct JobCounter;
 		friend class Job;
 
-		std::atomic<uint32_t> jobPoolReadIdx;
-		std::atomic<uint32_t> jobPoolMaxReadIdx;
-		std::atomic<uint32_t> jobPoolWriteIdx;
+		std::vector<Job*> jobPool;
+		std::vector<std::vector<Job*>> jobQueues;
+		Job*** newJobsToAdd = nullptr;
+		uint32_t* newJobsCount = nullptr;
+		std::vector<uint32_t> stealIds;
+
+		//std::atomic<uint32_t> jobPoolReadIdx;
+		//std::atomic<uint32_t> jobPoolMaxReadIdx;
+		//std::atomic<uint32_t> jobPoolWriteIdx;
 		//The queue of empty available jobs, implemented as a ring buffer
-		Job* jobPool[queueSize];
-		std::vector<JobQueue*> queues;
+		//Job* jobPool[queueSize];
+
+		//std::vector<JobQueue*> queues;
 		Job** currentJobsByThread = nullptr;
 		std::atomic<uint32_t> activeJobCount{ 0 };
 
@@ -215,11 +235,11 @@ namespace job {
 
 		SpinLock lock{};
 
-		void push_job(JobQueue& queue, Job& job);
-		Job* pop_job(JobQueue& queue);
+		void push_job(std::vector<Job*>& queue, Job& job);
+		Job* pop_job(std::vector<Job*>& queue);
 		Job* acquire_job();
 		void release_job(Job* job);
-		Job* steal_job(JobQueue& queue);
+		Job* steal_job(std::vector<Job*>& queue, uint32_t& stealId);
 		Job* getJob(uint32_t index);
 
 		void threadFunc(uint32_t idx);
