@@ -80,9 +80,6 @@
     <ClInclude Include="src\JobSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\JobSystemNT.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <MASM Include="src\ContextUtils.asm">

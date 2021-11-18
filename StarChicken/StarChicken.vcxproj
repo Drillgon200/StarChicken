@@ -214,7 +214,6 @@
     <Image Include="resources\textures\orbus.png" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\JobSystemNT.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\EntityComponentSystem.h" />
     <ClInclude Include="src\graphics\VkUtil.h" />

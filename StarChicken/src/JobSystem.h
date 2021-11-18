@@ -19,7 +19,7 @@ struct alignas(16) Context {
 };
 #pragma pack(pop)
 
-#pragma optimize("", off)
+//#pragma optimize("", off)
 
 extern "C" void save_registers(Context& c);
 extern "C" void load_registers(Context& c);
@@ -33,7 +33,7 @@ namespace job {
 #define ACTIVE 1
 #define ENDED 2
 
-	//Lock a regular full spin lock
+//Lock a regular full spin lock
 #define SPIN_LOCK(lock) job::RAIISpinLocker spin_locker##__LINE__(&lock);static_assert(true, "")
 //Read lock a reader writer spin lock
 #define RSPIN_LOCK(lock) job::RAIIRSpinLocker spin_locker##__LINE__(&lock);static_assert(true, "")
@@ -91,15 +91,15 @@ namespace job {
 
 		void lock() {
 			while (true) {
-				if (!locked.exchange(true, std::memory_order_seq_cst)) {
+				if (!locked.exchange(true, std::memory_order_acquire)) {
 					break;
 				}
-				while (locked.load(std::memory_order_seq_cst));
+				while (locked.load(std::memory_order_relaxed));
 			}
 		}
 
 		void unlock() {
-			locked.store(false, std::memory_order_seq_cst);
+			locked.store(false, std::memory_order_release);
 		}
 	};
 
@@ -147,14 +147,23 @@ namespace job {
 	const uint32_t queueSize = 1 << 8;
 	const uint32_t queueSizeMask = queueSize - 1;
 
-	extern thread_local int32_t currentThreadId;
-	extern Context* threadCtx;
-	int32_t this_thread_id();
-
-	class JobSystem;
 	struct JobDecl;
+	class Job;
 
-	volatile class Job {
+	struct JobThreadData {
+		Context threadCtx;
+		Job* currentJob;
+		Job** newJobsToAdd;
+		uint32_t newJobsToAddCount;
+		uint32_t stealId;
+		uint32_t threadId;
+
+		JobThreadData();
+	};
+
+	extern thread_local JobThreadData* threadData;
+
+	class Job {
 	public:
 		friend class JobSystem;
 		friend struct JobCounter;
@@ -167,28 +176,26 @@ namespace job {
 		uint32_t state = ENDED;
 		Context ctx{};
 	public:
-		
-		Job(JobSystem* sys);
+		Job(job::JobSystem* sys);
 		~Job();
 
-
-
-		//This function handles releasing the job and context switching back after the task ends
+		//This function handles running the job function and context switching back after the task ends
 		static void run(Job* job);
 	};
 
-	/*volatile struct JobQueue {
+	struct JobQueue {
 		std::thread::id threadId;
 		uint32_t id;
 		Job** jobs;
-		std::atomic<int32_t> top;
-		std::atomic<int32_t> bottom;
+		std::atomic<int64_t> top;
+		std::atomic<int64_t> bottom;
 		uint32_t stealId;
+		SpinLock queueLock{};
 
 		JobQueue(std::thread::id tid, uint32_t id);
 		~JobQueue();
-	};*/
-	volatile struct JobCounter {
+	};
+	struct JobCounter {
 		Job* job;
 		std::atomic<int32_t> counter;
 
@@ -197,7 +204,7 @@ namespace job {
 		void decrement();
 	};
 
-	volatile struct JobDecl {
+	struct JobDecl {
 		JobCounter* counter;
 		void (*func)(void*);
 		void* arg;
@@ -209,37 +216,30 @@ namespace job {
 		JobDecl(void (*f)(void));
 	};
 
-	volatile class JobSystem {
+	class JobSystem {
 	private:
 		friend struct JobCounter;
 		friend class Job;
 
-		std::vector<Job*> jobPool;
-		std::vector<std::vector<Job*>> jobQueues;
-		Job*** newJobsToAdd = nullptr;
-		uint32_t* newJobsCount = nullptr;
-		std::vector<uint32_t> stealIds;
-
-		//std::atomic<uint32_t> jobPoolReadIdx;
-		//std::atomic<uint32_t> jobPoolMaxReadIdx;
-		//std::atomic<uint32_t> jobPoolWriteIdx;
+		SpinLock jobPoolLock{};
+		std::atomic<uint32_t> jobPoolReadIdx;
+		std::atomic<uint32_t> jobPoolMaxReadIdx;
+		std::atomic<uint32_t> jobPoolWriteIdx;
 		//The queue of empty available jobs, implemented as a ring buffer
-		//Job* jobPool[queueSize];
+		Job* jobPool[queueSize];
+		std::vector<JobQueue*> queues;
 
 		//std::vector<JobQueue*> queues;
-		Job** currentJobsByThread = nullptr;
 		std::atomic<uint32_t> activeJobCount{ 0 };
 
 		std::vector<std::thread> threadpool;
 		std::atomic<bool> finished = false;
 
-		SpinLock lock{};
-
-		void push_job(std::vector<Job*>& queue, Job& job);
-		Job* pop_job(std::vector<Job*>& queue);
+		void push_job(JobQueue& queue, Job& job);
+		Job* pop_job(JobQueue& queue);
 		Job* acquire_job();
 		void release_job(Job* job);
-		Job* steal_job(std::vector<Job*>& queue, uint32_t& stealId);
+		Job* steal_job(JobQueue& queue, uint32_t& stealId);
 		Job* getJob(uint32_t index);
 
 		void threadFunc(uint32_t idx);
@@ -260,4 +260,4 @@ namespace job {
 
 }
 
-#pragma optimize("", on)
+//#pragma optimize("", on)
