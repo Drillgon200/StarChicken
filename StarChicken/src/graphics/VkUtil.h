@@ -13,16 +13,36 @@
 #include <vector>
 #include <optional>
 
+#define VKU_CHECK_RESULT(result, error) if(result != VK_SUCCESS){\
+	throw std::runtime_error(error);\
+}assert(true)
+
 namespace vku {
+
+	extern VkInstance instance;
+	extern VkPhysicalDevice physicalDevice;
+	extern VkDevice device;
+
+	extern VkQueue graphicsQueue;
+	extern VkQueue computeQueue;
+	extern VkQueue transferQueue;
+	extern VkQueue presentQueue;
+
+	extern VkFormat swapChainImageFormat;
+	extern VkExtent2D swapChainExtent;
+	extern bool frameBufferResized;
 
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
 		std::optional<uint32_t> presentFamily;
+		std::optional<uint32_t> transferFamily;
+		std::optional<uint32_t> computeFamily;
 
-		bool isComplete() {
-			return graphicsFamily.has_value() && presentFamily.has_value();
+		inline bool isComplete() {
+			return graphicsFamily.has_value() && presentFamily.has_value() && transferFamily.has_value() && computeFamily.has_value();
 		}
 	};
+	extern QueueFamilyIndices deviceQueueFamilyIndices;
 
 	struct SwapChainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities;
@@ -53,4 +73,5 @@ namespace vku {
 	VkBuffer create_buffer();
 
 	void create_instance();
+	bool draw_frame();
 }

@@ -193,6 +193,14 @@ namespace job {
 		while (finished.load(std::memory_order_relaxed)) {
 		}
 		std::atomic_thread_fence(std::memory_order_acquire);
+		uint32_t x87fpuControlWord = 0;
+		uint32_t mxcsrControlWord = 0;
+		{
+			Context ctx{};
+			save_registers(ctx);
+			x87fpuControlWord = ctx.x87fpuControlWord;
+			mxcsrControlWord = ctx.mxcsrControlWord;
+		}
 		uint8_t count = 0;
 		while (!finished.load(std::memory_order_relaxed)) {
 			Job* job = getJob(idx);
@@ -206,19 +214,20 @@ namespace job {
 					job->ctx.rip = (void*)job->run;
 					//Subtract from stack pointer to pretend we pushed a return address, otherwise the stack will be aligned wrong
 					job->ctx.rsp = (void*)(job->stackPointer-sizeof(uintptr_t));
+
+					job->ctx.x87fpuControlWord = x87fpuControlWord;
+					job->ctx.mxcsrControlWord = mxcsrControlWord;
 				}
 				localData.currentJob = job;
 
 				if (job->state == ACTIVE) {
 					std::cout << "Wrong state before: " << job->state << "\n";
-					exit(1);
 				}
 
 				job->state = ACTIVE;
 				swap_registers_arg(localData.threadCtx, job->ctx, job);
 				if (job->state == ACTIVE) {
 					std::cout << "Wrong state after: " << job->state << "\n";
-					exit(1);
 				}
 
 				if (job->state == ENDED) {

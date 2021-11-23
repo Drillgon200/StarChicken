@@ -9,30 +9,10 @@ namespace engine {
 	//job::JobSystem jobSystem;
 	job::JobSystem jobSystem;
 
-	int WIDTH = 512;
-	int HEIGHT = 512;
+	int32_t WINDOW_WIDTH = 512;
+	int32_t WINDOW_HEIGHT = 512;
 
 	GLFWwindow* window;
-	VkInstance instance;
-	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-	VkDevice device;
-	VkDebugUtilsMessengerEXT debugMessenger;
-
-	VkSurfaceKHR surface;
-
-	VkQueue graphicsQueue;
-	VkQueue computeQueue;
-	VkQueue transferQueue;
-	VkQueue presentQueue;
-
-	VkSwapchainKHR swapChain;
-	std::vector<VkImage> swapChainImages;
-	std::vector<VkImageView> swapChainImageViews;
-	std::vector<VkFramebuffer> swapChainFramebuffers;
-	std::vector<VkCommandBuffer> commandBuffers;
-	VkFormat swapChainImageFormat;
-	VkExtent2D swapChainExtent;
-	bool frameBufferResized = false;
 
 	struct test {
 		int bruh;
@@ -44,6 +24,7 @@ namespace engine {
 	};
 
 	void render() {
+		vku::draw_frame();
 	}
 
 	void update() {
@@ -51,9 +32,9 @@ namespace engine {
 
 	void main_loop() {
 		while (!glfwWindowShouldClose(window)) {
-			if (iterations % 10000 == 0) {
+			/*if (iterations % 10000 == 0) {
 				std::cout << iterations << "\n";
-			}
+			}*/
 			++iterations;
 			job::JobDecl decls[2];
 			decls[0] = job::JobDecl(update);
@@ -71,20 +52,30 @@ namespace engine {
 	//Must be called from main thread
 	void init_window() {
 		glfwInit();
+		if (!glfwVulkanSupported()) {
+			glfwTerminate();
+			std::cerr << "Failed to initialize game! Vulkan is not supported!" << std::endl;
+			exit(1);
+		}
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-		window = glfwCreateWindow(WIDTH, HEIGHT, "Star Chicken", nullptr, nullptr);
-		glfwSetWindowUserPointer(window, &frameBufferResized);
+		window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Star Chicken", nullptr, nullptr);
+		glfwSetWindowUserPointer(window, &vku::frameBufferResized);
 		glfwSetFramebufferSizeCallback(window, framebuffer_resize_callback);
 	}
 
+	void cleanup_window() {
+		glfwDestroyWindow(window);
+		glfwTerminate();
+	}
+
 	void init_engine() {
-		//vku::init_vulkan();
+		vku::init_vulkan();
 	}
 
 	void cleanup() {
-		glfwDestroyWindow(window);
+		vku::cleanup_vulkan();
 	}
 
 	//We're going to go with snake_case names to match the standard library. Feels a little weird coming from java, but I'll get over it.
@@ -100,7 +91,16 @@ namespace engine {
 }
 
 int main() {
-
+	engine::init_window();
+	engine::init_engine();
+	while (!glfwWindowShouldClose(engine::window)) {
+		glfwPollEvents();
+		engine::render();
+	}
+	VKU_CHECK_RESULT(vkDeviceWaitIdle(vku::device), "Failed to wait idle!");
+	engine::cleanup();
+	engine::cleanup_window();
+	return 0;
 	engine::init_window();
 
 	uint32_t threadCount = std::max(static_cast<uint32_t>(1), std::thread::hardware_concurrency()-1);
@@ -117,6 +117,7 @@ int main() {
 	}
 
 	engine::jobSystem.end_job_system();
+	engine::cleanup_window();
 
 	return 0;
 }

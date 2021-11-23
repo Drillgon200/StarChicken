@@ -192,11 +192,13 @@
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\EntityComponentSystem.cpp" />
+    <ClCompile Include="src\graphics\Framebuffer.cpp" />
     <ClCompile Include="src\graphics\GraphicsPipeline.cpp" />
+    <ClCompile Include="src\graphics\RenderPass.cpp" />
     <ClCompile Include="src\graphics\VkUtil.cpp" />
     <ClCompile Include="src\JobSystem.cpp" />
     <ClCompile Include="src\Profiling.cpp" />
-    <ClCompile Include="src\graphics\ShaderManager.cpp" />
+    <ClCompile Include="src\util\DrillMath.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Vulkan Shooter\resources\shaders\compile.bat" />
@@ -216,10 +218,14 @@
   <ItemGroup>
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\EntityComponentSystem.h" />
+    <ClInclude Include="src\graphics\Framebuffer.h" />
+    <ClInclude Include="src\graphics\GraphicsPipeline.h" />
+    <ClInclude Include="src\graphics\RenderPass.h" />
     <ClInclude Include="src\graphics\VkUtil.h" />
     <ClInclude Include="src\JobSystem.h" />
     <ClInclude Include="src\Profiling.h" />
     <ClInclude Include="src\graphics\ShaderManager.h" />
+    <ClInclude Include="src\util\DrillMath.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
