@@ -1,7 +1,7 @@
 # StarChicken
 Engine tech built with Vulkan and C++, for education.
 
-This is a game development educational project. That means minimal dependencies and libraries used (will remove glm and glfw eventually in favor of my own math and platform specific window libraries), no bought assets or anything like that, and the primary goal is not to produce a good game.
+This is a game development educational project. That means minimal dependencies and libraries used, no bought assets or anything like that, and the primary goal is not to produce a good game.
 
 This is my first venture into C++ and vulkan, and all the fun things that come with it like assembly and heavy multithreading. Please don't kill me if the code is too bad.
 
