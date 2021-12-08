@@ -8,15 +8,19 @@ namespace vku {
 	private:
 		VkFramebuffer fbo;
 		VkImageView* imageView;
+		Texture* depthTexture;
 		VkExtent2D fboExtent;
 		VkRenderPass* renderPass;
 		vec4f clearColor;
+		float clearDepth;
 		bool hasDepthBuffer;
 	public:
 		Framebuffer() :
 			clearColor{ 0.0F },
+			clearDepth{ 0.0F },
 			hasDepthBuffer{ false },
 			imageView{ nullptr },
+			depthTexture{ nullptr },
 			fboExtent{ 0, 0 },
 			renderPass{ nullptr }
 		{

@@ -2,10 +2,7 @@
 
 #include <unordered_map>
 #include <vector>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/common.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include "util/DrillMath.h"
 #include "JobSystem.h"
 
 namespace ecs {
@@ -14,18 +11,18 @@ namespace ecs {
 	const Entity NULL_ENTITY = 0;
 
 	struct HierarchyComponent {
+		mat4f world_transform;
 		Entity parent = NULL_ENTITY;
-		glm::mat4 world_transform;
 	};
 
 	struct TransformComponent {
-		glm::vec3 position;
-		glm::quat rotation;
-		glm::vec3 scale;
+		vec3f position;
+		quat4f rotation;
+		vec3f scale;
 
-		glm::mat4 toMatrix() {
-			glm::mat4 matrix = glm::toMat4(rotation);
-			glm::scale(matrix, scale);
+		mat4f toMatrix() {
+			mat4f matrix = rotation.to_mat4();
+			matrix.scale(scale);
 			matrix[3][0] = position.x;
 			matrix[3][1] = position.y;
 			matrix[3][2] = position.z;
@@ -247,7 +244,8 @@ namespace ecs {
 				return;
 			}
 			HierarchyComponent* pHier = getComponent<HierarchyComponent>(parent);
-			cHier->world_transform = pHier->world_transform * cTransform->toMatrix();
+			mat4f cmat =  cTransform->toMatrix();
+			pHier->world_transform.mul(cmat, cHier->world_transform);
 
 			std::vector<IComponentManager*> pTypes = componentDeletes[parent];
 			std::vector<IComponentManager*> cTypes = componentDeletes[child];

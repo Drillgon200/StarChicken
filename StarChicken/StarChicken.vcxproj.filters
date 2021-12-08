@@ -42,6 +42,30 @@
     <ClCompile Include="src\util\DrillMath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\graphics\VertexBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\SingleBufferAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\ShaderUniforms.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\TextureManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\DeviceMemoryAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\FileDocument.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\Util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\Windowing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Vulkan Shooter\resources\shaders\compile.bat">
@@ -58,6 +82,11 @@
     </None>
     <None Include="resources\shaders\triangle.frag" />
     <None Include="resources\shaders\triangle.vert" />
+    <None Include="packages.config" />
+    <None Include="..\..\bc7test\orbus.dtf" />
+    <None Include="resources\textures\orbus.dtf" />
+    <None Include="resources\textures\missing.dtf" />
+    <None Include="resources\models\testmodel.dmf" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\Vulkan Shooter\resources\textures\orbus.png">
@@ -96,6 +125,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\util\DrillMath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\VertexBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\SingleBufferAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\ShaderUniforms.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\TextureManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\DeviceMemoryAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\Util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\FileDocument.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\Windowing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -83,6 +83,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -126,7 +127,7 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\include;F:\vulkan_shooter\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -142,11 +143,11 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\lib-vc2019;F:\vulkan_shooter\sdk\1.2.176.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <OptimizeReferences>false</OptimizeReferences>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>4194304 </StackReserveSize>
       <StackCommitSize>4194304 </StackCommitSize>
     </Link>
@@ -165,7 +166,7 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\include;F:\vulkan_shooter\glm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
@@ -176,15 +177,16 @@
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
       <SupportJustMyCode>false</SupportJustMyCode>
       <OmitFramePointers>false</OmitFramePointers>
+      <DisableSpecificWarnings>26812;C26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>F:\vulkan_shooter\glfw-3.3.4.bin.WIN64\lib-vc2019;F:\vulkan_shooter\sdk\1.2.176.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <StackReserveSize>4194304 </StackReserveSize>
       <StackCommitSize>4194304 </StackCommitSize>
     </Link>
@@ -192,24 +194,37 @@
   <ItemGroup>
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\EntityComponentSystem.cpp" />
+    <ClCompile Include="src\graphics\DeviceMemoryAllocator.cpp" />
     <ClCompile Include="src\graphics\Framebuffer.cpp" />
     <ClCompile Include="src\graphics\GraphicsPipeline.cpp" />
     <ClCompile Include="src\graphics\RenderPass.cpp" />
+    <ClCompile Include="src\graphics\SingleBufferAllocator.cpp" />
+    <ClCompile Include="src\graphics\ShaderUniforms.cpp" />
+    <ClCompile Include="src\graphics\TextureManager.cpp" />
+    <ClCompile Include="src\graphics\VertexBuffer.cpp" />
     <ClCompile Include="src\graphics\VkUtil.cpp" />
     <ClCompile Include="src\JobSystem.cpp" />
     <ClCompile Include="src\Profiling.cpp" />
     <ClCompile Include="src\util\DrillMath.cpp" />
+    <ClCompile Include="src\util\FileDocument.cpp" />
+    <ClCompile Include="src\util\Util.cpp" />
+    <ClCompile Include="src\util\Windowing.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\bc7test\orbus.dtf" />
     <None Include="..\Vulkan Shooter\resources\shaders\compile.bat" />
     <None Include="..\Vulkan Shooter\resources\shaders\triangle.frag" />
     <None Include="..\Vulkan Shooter\resources\shaders\triangle.vert" />
     <MASM Include="src\ContextUtils.asm">
       <FileType>Document</FileType>
     </MASM>
+    <None Include="packages.config" />
+    <None Include="resources\models\testmodel.dmf" />
     <None Include="resources\shaders\compile.bat" />
     <None Include="resources\shaders\triangle.frag" />
     <None Include="resources\shaders\triangle.vert" />
+    <None Include="resources\textures\missing.dtf" />
+    <None Include="resources\textures\orbus.dtf" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\Vulkan Shooter\resources\textures\orbus.png" />
@@ -218,17 +233,32 @@
   <ItemGroup>
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\EntityComponentSystem.h" />
+    <ClInclude Include="src\graphics\DeviceMemoryAllocator.h" />
     <ClInclude Include="src\graphics\Framebuffer.h" />
     <ClInclude Include="src\graphics\GraphicsPipeline.h" />
     <ClInclude Include="src\graphics\RenderPass.h" />
+    <ClInclude Include="src\graphics\SingleBufferAllocator.h" />
+    <ClInclude Include="src\graphics\ShaderUniforms.h" />
+    <ClInclude Include="src\graphics\TextureManager.h" />
+    <ClInclude Include="src\graphics\VertexBuffer.h" />
     <ClInclude Include="src\graphics\VkUtil.h" />
     <ClInclude Include="src\JobSystem.h" />
     <ClInclude Include="src\Profiling.h" />
     <ClInclude Include="src\graphics\ShaderManager.h" />
     <ClInclude Include="src\util\DrillMath.h" />
+    <ClInclude Include="src\util\FileDocument.h" />
+    <ClInclude Include="src\util\Util.h" />
+    <ClInclude Include="src\util\Windowing.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />
+    <Import Project="..\packages\Microsoft.CodeAnalysis.Metrics.3.3.3\build\Microsoft.CodeAnalysis.Metrics.targets" Condition="Exists('..\packages\Microsoft.CodeAnalysis.Metrics.3.3.3\build\Microsoft.CodeAnalysis.Metrics.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\Microsoft.CodeAnalysis.Metrics.3.3.3\build\Microsoft.CodeAnalysis.Metrics.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeAnalysis.Metrics.3.3.3\build\Microsoft.CodeAnalysis.Metrics.targets'))" />
+  </Target>
 </Project>

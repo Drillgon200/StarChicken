@@ -1,20 +1,24 @@
 #pragma once
+
 #include <string>
-#include "RenderPass.h"
+#include <vulkan/vulkan.h>
 
 namespace vku {
+	class RenderPass;
+	class VertexFormat;
+	class DescriptorSet;
+
 	class GraphicsPipeline {
 	private:
 		std::string shaderName;
 		RenderPass* renderPass;
+		VertexFormat* vertexFormat;
+		DescriptorSet* descriptorSet;
 
 		VkPipelineLayout pipelineLayout;
 		VkPipeline pipeline;
 	public:
-		GraphicsPipeline() :
-			shaderName{ "" },
-			renderPass{ nullptr }
-		{}
+		GraphicsPipeline();
 
 		GraphicsPipeline& name(const char* name) {
 			shaderName = name;
@@ -26,8 +30,21 @@ namespace vku {
 			return *this;
 		}
 
+		GraphicsPipeline& vertex_format(VertexFormat& format) {
+			vertexFormat = &format;
+			return *this;
+		}
+
+		GraphicsPipeline& descriptor_set(DescriptorSet& set) {
+			descriptorSet = &set;
+			return *this;
+		}
+
 		void build();
 		void destroy();
+		inline VkPipelineLayout get_layout() {
+			return pipelineLayout;
+		}
 		void bind(VkCommandBuffer commandBuffer);
 	};
 }

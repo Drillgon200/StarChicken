@@ -4,6 +4,9 @@
 #include <vulkan/vulkan.h>
 #include "VkUtil.h"
 #include "GraphicsPipeline.h"
+#include "RenderPass.h"
+#include "VertexBuffer.h"
+#include "ShaderUniforms.h"
 
 namespace vku {
 	std::vector<uint8_t> read_file_to_buffer(std::string& fileName) {
@@ -34,6 +37,12 @@ namespace vku {
 		return shaderModule;
 	}
 
+	GraphicsPipeline::GraphicsPipeline() :
+		shaderName{ "" },
+		renderPass{ nullptr },
+		vertexFormat{ nullptr }
+	{}
+
 	void GraphicsPipeline::build() {
 		assert(renderPass != nullptr);
 
@@ -62,10 +71,17 @@ namespace vku {
 
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputInfo.vertexBindingDescriptionCount = 0;
-		vertexInputInfo.pVertexBindingDescriptions = nullptr;
-		vertexInputInfo.vertexAttributeDescriptionCount = 0;
-		vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+		if (vertexFormat) {
+			vertexInputInfo.vertexBindingDescriptionCount = 1;
+			vertexInputInfo.pVertexBindingDescriptions = &vertexFormat->get_binding_description();
+			vertexInputInfo.vertexAttributeDescriptionCount = vertexFormat->get_element_count();
+			vertexInputInfo.pVertexAttributeDescriptions = vertexFormat->get_attribute_descriptions();
+		} else {
+			vertexInputInfo.vertexBindingDescriptionCount = 0;
+			vertexInputInfo.pVertexBindingDescriptions = nullptr;
+			vertexInputInfo.vertexAttributeDescriptionCount = 0;
+			vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+		}
 
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
 		inputAssemblyInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -81,6 +97,7 @@ namespace vku {
 		viewport.minDepth = 0.0F;
 		viewport.maxDepth = 1.0F;
 
+		//Irrelevant, this is a dynamic state
 		VkRect2D scissor{};
 		scissor.extent = vku::swapChainExtent;
 		scissor.offset = { 0, 0 };
@@ -96,9 +113,8 @@ namespace vku {
 		rasterizationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 		rasterizationInfo.depthClampEnable = VK_FALSE;
 		rasterizationInfo.rasterizerDiscardEnable = VK_FALSE;
-		rasterizationInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-		//Clockwise means that the triangle area should be positive according to the vulkan formula which is inverted from opengl, which means vertices are still specified in a counter clockwise order like normal.
-		rasterizationInfo.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		rasterizationInfo.cullMode = VK_CULL_MODE_NONE;
+		rasterizationInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 		rasterizationInfo.polygonMode = VK_POLYGON_MODE_FILL;
 		rasterizationInfo.lineWidth = 1.0F;
 		rasterizationInfo.depthBiasEnable = VK_FALSE;
@@ -114,6 +130,19 @@ namespace vku {
 		multisampleInfo.pSampleMask = nullptr;
 		multisampleInfo.alphaToCoverageEnable = VK_FALSE;
 		multisampleInfo.alphaToOneEnable = VK_FALSE;
+
+		VkPipelineDepthStencilStateCreateInfo depthStencil{};
+		depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencil.minDepthBounds = 0.0F;
+		depthStencil.maxDepthBounds = 1.0F;
+		depthStencil.depthBoundsTestEnable = VK_FALSE;
+		depthStencil.depthCompareOp = VK_COMPARE_OP_GREATER_OR_EQUAL;
+		depthStencil.depthWriteEnable = VK_TRUE;
+		depthStencil.depthTestEnable = VK_TRUE;
+		//No stencil buffering right now.
+		depthStencil.front = {};
+		depthStencil.back = {};
+		depthStencil.stencilTestEnable = VK_FALSE;
 
 		VkPipelineColorBlendAttachmentState colorBlendAttachment{};
 		colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -136,21 +165,28 @@ namespace vku {
 		blendStateInfo.blendConstants[2] = 0.0F;
 		blendStateInfo.blendConstants[3] = 0.0F;
 
-		VkDynamicState dynamicStates[]{
-			VK_DYNAMIC_STATE_VIEWPORT
+		std::array<VkDynamicState, 2> dynamicStates{
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR 
 		};
 
 		VkPipelineDynamicStateCreateInfo dynamicStateInfo{};
 		dynamicStateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicStateInfo.dynamicStateCount = 1;
-		dynamicStateInfo.pDynamicStates = dynamicStates;
+		dynamicStateInfo.dynamicStateCount = dynamicStates.size();
+		dynamicStateInfo.pDynamicStates = dynamicStates.data();
 
 		VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 		pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutInfo.setLayoutCount = 0;
 		pipelineLayoutInfo.pushConstantRangeCount = 0;
-		pipelineLayoutInfo.pSetLayouts = nullptr;
 		pipelineLayoutInfo.pPushConstantRanges = nullptr;
+		if (descriptorSet == nullptr) {
+			pipelineLayoutInfo.setLayoutCount = 0;
+			pipelineLayoutInfo.pSetLayouts = nullptr;
+		} else {
+			pipelineLayoutInfo.setLayoutCount = 1;
+			pipelineLayoutInfo.pSetLayouts = descriptorSet->get_layout();
+		}
+		
 
 		VKU_CHECK_RESULT(vkCreatePipelineLayout(vku::device, &pipelineLayoutInfo, nullptr, &pipelineLayout), "Failed to create pipeline layout!");
 
@@ -163,7 +199,7 @@ namespace vku {
 		pipelineInfo.pViewportState = &viewportStateInfo;
 		pipelineInfo.pRasterizationState = &rasterizationInfo;
 		pipelineInfo.pMultisampleState = &multisampleInfo;
-		pipelineInfo.pDepthStencilState = nullptr;
+		pipelineInfo.pDepthStencilState = &depthStencil;
 		pipelineInfo.pColorBlendState = &blendStateInfo;
 		pipelineInfo.pDynamicState = &dynamicStateInfo;
 		pipelineInfo.layout = pipelineLayout;

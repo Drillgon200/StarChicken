@@ -13,19 +13,36 @@ namespace vku {
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+		VkAttachmentDescription depthAttachment{};
+		depthAttachment.format = VK_FORMAT_D32_SFLOAT;
+		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		VkAttachmentDescription attachments[] = { colorAttachment, depthAttachment };
+
 		VkAttachmentReference colorAttachmentRef{};
 		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachmentRef.attachment = 0;
+
+		VkAttachmentReference depthAttachmentRef{};
+		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		depthAttachmentRef.attachment = 1;
 
 		VkSubpassDescription subpass{};
 		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &colorAttachmentRef;
+		subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = 1;
-		renderPassInfo.pAttachments = &colorAttachment;
+		renderPassInfo.attachmentCount = 2;
+		renderPassInfo.pAttachments = attachments;
 		renderPassInfo.subpassCount = 1;
 		renderPassInfo.pSubpasses = &subpass;
 
@@ -47,9 +64,10 @@ namespace vku {
 		renderBeginInfo.framebuffer = fbo.get_framebuffer();
 		renderBeginInfo.renderArea.extent = fbo.get_extent();
 		float* color = fbo.get_clear_color().components;
-		VkClearValue clearValues[1];
+		VkClearValue clearValues[2];
 		clearValues[0].color = { color[0], color[1], color[2], color[3] };
-		renderBeginInfo.clearValueCount = 1;
+		clearValues[1].depthStencil = { 0.0f, 0 };
+		renderBeginInfo.clearValueCount = 2;
 		renderBeginInfo.pClearValues = clearValues;
 
 		vkCmdBeginRenderPass(commandBuffer, &renderBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
