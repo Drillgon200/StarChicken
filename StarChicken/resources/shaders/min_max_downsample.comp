@@ -1,0 +1,49 @@
+#version 460
+
+layout (set = 0, binding = 0) uniform texture2D from;
+layout (set = 0, binding = 1, rg32f) uniform writeonly image2D to;
+layout (set = 0, binding = 2) uniform sampler minSampler;
+layout (set = 0, binding = 3) uniform sampler maxSampler;
+
+layout (push_constant, std140) uniform Sizes {
+	uint width;
+	uint height;
+	uint depthCopy;
+} sizes;
+
+float d_max4(float a, float b, float c, float d){
+	return max(max(a, b), max(c, d));
+}
+
+float d_min4(float a, float b, float c, float d){
+	return min(min(a, b), min(c, d));
+}
+
+layout (local_size_x = 16, local_size_y = 16) in;
+void main() {
+	if(gl_GlobalInvocationID.x >= sizes.width || gl_GlobalInvocationID.y >= sizes.height){
+		return;
+	}
+	vec2 texelSize = 1.0/vec2(sizes.width, sizes.height);
+	vec2 texCoord = (vec2(gl_GlobalInvocationID.xy) + vec2(0.5)) * texelSize;
+	/*vec2 depth[4] = vec2[](imageLoad(from, texCoord).xy, imageLoad(from, texCoord + ivec2(0, 1)).xy, imageLoad(from, texCoord + ivec2(1, 0)).xy, imageLoad(from, texCoord + ivec2(1, 1)).xy);
+	float minDepth = min(depth[0].x, min(depth[1].x, min(depth[2].x, depth[3].x)));
+	float maxDepth = max(depth[0].y, max(depth[1].y, max(depth[2].y, depth[3].y)));*/
+
+
+	uint idx = sizes.depthCopy == 1 ? 0 : 1;
+	//The stupid
+	float maxDepth = d_max4(
+		texture(sampler2D(from, maxSampler), texCoord + vec2(0.1, -0.1)*texelSize)[idx], 
+		texture(sampler2D(from, maxSampler), texCoord + vec2(0.1, 0.1)*texelSize)[idx], 
+		texture(sampler2D(from, maxSampler), texCoord + vec2(-0.1, -0.1)*texelSize)[idx], 
+		texture(sampler2D(from, maxSampler), texCoord + vec2(-0.1, 0.1)*texelSize)[idx]
+		);
+	float minDepth = d_min4(
+		texture(sampler2D(from, minSampler), texCoord + vec2(0.1, -0.1)*texelSize).x, 
+		texture(sampler2D(from, minSampler), texCoord + vec2(0.1, 0.1)*texelSize).x, 
+		texture(sampler2D(from, minSampler), texCoord + vec2(-0.1, -0.1)*texelSize).x, 
+		texture(sampler2D(from, minSampler), texCoord + vec2(-0.1, 0.1)*texelSize).x
+		);
+	imageStore(to, ivec2(gl_GlobalInvocationID.xy), vec4(minDepth, maxDepth, 0.0, 0.0));
+}

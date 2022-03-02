@@ -32,7 +32,8 @@ const std::string MODEL_PATH = "resources/models/viking_room.obj";
 const std::string TEXTURE_PATH = "resources/textures/viking_room.png";
 
 const std::vector<const char*> validationLayers = {
-	"VK_LAYER_KHRONOS_validation"
+	"VK_LAYER_KHRONOS_validation",
+	"VK_LAYER_KHRONOS_synchronization2"
 };
 
 const std::vector<const char*> deviceExtensions = {
@@ -1497,12 +1498,19 @@ private:
 		createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
 		VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+		VkValidationFeatureEnableEXT enables[] = { VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT, VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT };
+		VkValidationFeaturesEXT features{};
 		if (enableValidationLayers) {
 			createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
 			createInfo.ppEnabledLayerNames = validationLayers.data();
 
 			populateDebugMessengerCreateInfo(debugCreateInfo);
 			createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+
+			features.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+			features.enabledValidationFeatureCount = 2;
+			features.pEnabledValidationFeatures = enables;
+			debugCreateInfo.pNext = &features;
 		} else {
 			createInfo.enabledLayerCount = 0;
 		}

@@ -1,0 +1,116 @@
+#version 460
+
+struct Object {
+	uint selectionFlags;
+	uint visible;
+};
+layout (set = 0, binding = 0, std430) restrict readonly buffer Objects {
+	Object object[];
+} objects;
+struct Mesh {
+	uint vertexOffset;
+	uint indexOffset;
+	//If 0, this is not a skinned mesh. We need this because not all meshes have skinning data, and the offset won't be the same as the vertex offset.
+	uint skinDataOffset;
+	uint vertCount;
+	//Local space bounding box
+	float minX;
+	float minY;
+	float minZ;
+	float maxX;
+	float maxY;
+	float maxZ;
+};
+layout (set = 0, binding = 1, std430) restrict readonly buffer Meshes {
+	Mesh mesh[];
+} meshes;
+struct Model {
+	uint meshId;
+	uint skinMatricesOffset;
+	uint skinVerticesOffset;
+	uint objectId;
+};
+layout (set = 0, binding = 2, std430) restrict readonly buffer Models {
+	Model model[];
+} models;
+layout (set = 0, binding = 3, std430) restrict buffer Geometry {
+	uint geo[];
+} geometry;
+layout (set = 0, binding = 4, std430) restrict readonly buffer SkinMatrices {
+	mat4 mat[];
+} skinMatrices;
+layout (set = 0, binding = 5, std430) restrict readonly buffer ModelIdByWorkgroup {
+	uint ids[];
+} modelIdByWorkgroup;
+
+layout (set = 1, binding = 0, std140) uniform GeoOffset {
+	uint posOffset;
+	uint texOffset;
+	uint normOffset;
+	uint tanOffset;
+	uint skinDataOffset;
+	uint indicesOffset;
+	uint skinPosOffset;
+	uint skinNormOffset;
+	uint skinTanOffset;
+	uint finalIndicesOffset;
+} geoOffsets;
+
+float unpack_weight(uint weights, uint idx){
+	return float((weights >> (idx * 8)) & 0xFF)/255.0;
+}
+
+uint unpack_index(uint indices, uint idx){
+	return (indices >> (idx * 8)) & 0xFF;
+}
+
+vec3 read_geo_vec3(uint offset){
+	return vec3(uintBitsToFloat(geometry.geo[offset]), uintBitsToFloat(geometry.geo[offset + 1]), uintBitsToFloat(geometry.geo[offset + 2]));
+};
+
+void write_geo_vec3(vec3 val, uint offset){
+	geometry.geo[offset] = floatBitsToUint(val.x);
+	geometry.geo[offset + 1] = floatBitsToUint(val.y);
+	geometry.geo[offset + 2] = floatBitsToUint(val.z);
+};
+
+layout (local_size_x = 256) in;
+void main(){
+	uint modelAndVertOffset = modelIdByWorkgroup.ids[gl_WorkGroupID.x];
+	uint modelId = modelAndVertOffset & 0xFFFFFF;
+	Model model = models.model[modelId];
+	Mesh mesh = meshes.mesh[model.meshId];
+
+	uint vertId = ((modelAndVertOffset >> 24) & 0xFF) * 256 + gl_LocalInvocationID.x;
+	if(vertId >= mesh.vertCount){
+		return;
+	}
+
+	
+	vec3 position = read_geo_vec3(geometry.geo[geoOffsets.posOffset + (vertId + mesh.vertexOffset) * 3]);
+	vec3 normal = read_geo_vec3(geometry.geo[geoOffsets.normOffset + (vertId + mesh.vertexOffset) * 3]);
+	vec3 tangent = read_geo_vec3(geometry.geo[geoOffsets.tanOffset + (vertId + mesh.vertexOffset) * 3]);
+
+	vec3 finalPos = vec3(0.0);
+	vec3 finalNorm = vec3(0.0);
+	vec3 finalTan = vec3(0.0);
+	uint boneIndices = geometry.geo[geoOffsets.skinDataOffset + mesh.skinDataOffset + vertId * 2];
+	uint boneWeights = geometry.geo[geoOffsets.skinDataOffset + mesh.skinDataOffset + vertId * 2 + 1];
+	for(uint i = 0; i < 4; i++){
+		uint index = unpack_index(boneIndices, i);
+		float weight = unpack_weight(boneWeights, i);
+		mat4 boneMatrix = skinMatrices.mat[model.skinMatricesOffset + index];
+		mat3 boneRotMatrix = mat3(boneMatrix);
+		
+		finalPos += (boneMatrix * vec4(position, 1)).xyz * weight;
+		finalNorm += (boneRotMatrix * normal) * weight;
+		finalTan += (boneRotMatrix * tangent) * weight;
+	}
+
+	write_geo_vec3(finalPos, geoOffsets.skinPosOffset + (model.skinVerticesOffset + vertId) * 3);
+	write_geo_vec3(normalize(finalNorm), geoOffsets.skinNormOffset + (model.skinVerticesOffset + vertId) * 3);
+	write_geo_vec3(normalize(finalTan), geoOffsets.skinTanOffset + (model.skinVerticesOffset + vertId) * 3);
+	//skinnedVertices.posNormTan[(model.skinVerticesOffset + vertId) * 3] = finalPos;
+	//skinnedVertices.posNormTan[(model.skinVerticesOffset + vertId) * 3 + 1] = normalize(finalNorm);
+	//skinnedVertices.posNormTan[(model.skinVerticesOffset + vertId) * 3 + 2] = normalize(finalTan);
+}

@@ -2,54 +2,38 @@
 #include "VkUtil.h"
 
 namespace vku {
-	void RenderPass::create(VkFormat swapChainImageFormat) {
-		VkAttachmentDescription colorAttachment{};
-		colorAttachment.format = swapChainImageFormat;
-		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format = VK_FORMAT_D32_SFLOAT;
-		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-		VkAttachmentDescription attachments[] = { colorAttachment, depthAttachment };
-
-		VkAttachmentReference colorAttachmentRef{};
-		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		colorAttachmentRef.attachment = 0;
-
-		VkAttachmentReference depthAttachmentRef{};
-		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		depthAttachmentRef.attachment = 1;
-
-		VkSubpassDescription subpass{};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &colorAttachmentRef;
-		subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
+	void RenderPass::create(uint32_t attachmentCount, uint32_t subpassCount, uint32_t dependencyCount, VkAttachmentDescription* attachments, VkSubpassDescription* subpassDesc, VkSubpassDependency* subpassDependencies) {
+		subpass = *subpassDesc;
+		if (subpass.colorAttachmentCount > 0) {
+			VkAttachmentReference* colorRefs = new VkAttachmentReference[subpass.colorAttachmentCount];
+			memcpy(colorRefs, subpass.pColorAttachments, subpass.colorAttachmentCount * sizeof(VkAttachmentReference));
+			subpass.pColorAttachments = colorRefs;
+		}
+		if (subpass.pDepthStencilAttachment != nullptr) {
+			VkAttachmentReference* depthRef = new VkAttachmentReference();
+			*depthRef = *subpass.pDepthStencilAttachment;
+			subpass.pDepthStencilAttachment = depthRef;
+		}
 		VkRenderPassCreateInfo renderPassInfo{};
 		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		renderPassInfo.attachmentCount = 2;
+		renderPassInfo.attachmentCount = attachmentCount;
 		renderPassInfo.pAttachments = attachments;
-		renderPassInfo.subpassCount = 1;
+		renderPassInfo.subpassCount = subpassCount;
 		renderPassInfo.pSubpasses = &subpass;
+		renderPassInfo.dependencyCount = dependencyCount;
+		renderPassInfo.pDependencies = subpassDependencies;
+		
 
 		VKU_CHECK_RESULT(vkCreateRenderPass(vku::device, &renderPassInfo, nullptr, &renderPass), "Failed to create render pass!");
 	}
 
 	void RenderPass::destroy() {
+		if (subpass.colorAttachmentCount > 0) {
+			delete[] subpass.pColorAttachments;
+		}
+		if (subpass.pDepthStencilAttachment) {
+			delete subpass.pDepthStencilAttachment;
+		}
 		vkDestroyRenderPass(vku::device, renderPass, nullptr);
 	}
 
@@ -63,11 +47,8 @@ namespace vku {
 		renderBeginInfo.renderPass = renderPass;
 		renderBeginInfo.framebuffer = fbo.get_framebuffer();
 		renderBeginInfo.renderArea.extent = fbo.get_extent();
-		float* color = fbo.get_clear_color().components;
-		VkClearValue clearValues[2];
-		clearValues[0].color = { color[0], color[1], color[2], color[3] };
-		clearValues[1].depthStencil = { 0.0f, 0 };
-		renderBeginInfo.clearValueCount = 2;
+		VkClearValue* clearValues = fbo.get_clear_values();
+		renderBeginInfo.clearValueCount = fbo.get_attachment_count();
 		renderBeginInfo.pClearValues = clearValues;
 
 		vkCmdBeginRenderPass(commandBuffer, &renderBeginInfo, VK_SUBPASS_CONTENTS_INLINE);

@@ -1,0 +1,232 @@
+#version 460
+#extension GL_KHR_shader_subgroup_ballot : enable
+#extension GL_KHR_shader_subgroup_vote : enable
+
+struct Object {
+	uint selectionFlags;
+	uint visible;
+};
+layout (set = 0, binding = 0, std430) restrict readonly buffer Objects {
+	Object object[];
+} objects;
+struct Mesh {
+	uint vertexOffset;
+	uint indexOffset;
+	//If 0, this is not a skinned mesh. We need this because not all meshes have skinning data, and the offset won't be the same as the vertex offset.
+	uint skinDataOffset;
+	uint vertCount;
+	//Local space bounding box
+	float minX;
+	float minY;
+	float minZ;
+	float maxX;
+	float maxY;
+	float maxZ;
+};
+layout (set = 0, binding = 1, std430) restrict readonly buffer Meshes {
+	Mesh mesh[];
+} meshes;
+struct Model {
+	uint meshId;
+	uint skinMatricesOffset;
+	uint skinVerticesOffset;
+	uint objectId;
+};
+layout (set = 0, binding = 2, std430) restrict readonly buffer Models {
+	Model model[];
+} models;
+layout (set = 0, binding = 3, std430) restrict readonly buffer Transforms {
+	mat4 mat[];
+} transforms;
+layout (set = 0, binding = 4, std430) restrict readonly buffer DispatchModelIds {
+	uint ids[];
+} dispatchModelIds;
+struct GeometrySet {
+	uint modelId[256];
+	uint setModelOffset;
+	uint setModelCount;
+	uint indexOffset;
+};
+layout (set = 0, binding = 5, std430) restrict readonly buffer GeometrySets {
+	//uint modelIds[];
+	GeometrySet sets[];
+} geoSets;
+struct VkDispatchIndirectCommand {
+	uint x;
+	uint y;
+	uint z;
+};
+//Unused
+layout (set = 0, binding = 6, std430) restrict readonly buffer TriangleCullArgs {
+	VkDispatchIndirectCommand args[];
+} triangleCullArgs;
+layout (set = 0, binding = 7, std430) restrict buffer Geometry {
+	uint geo[];
+} geometry;
+struct VkDrawIndexedIndirectCommand {
+	uint indexCount;
+	uint instanceCount;
+	uint firstIndex;
+	int vertexOffset;
+	uint firstInstance;
+};
+struct MultiDrawIndrectCommand {
+	//0 or 1 in this case, set to 0 to avoid drawing anything if every mesh is culled.
+	uint drawCount;
+	VkDrawIndexedIndirectCommand command;
+};
+layout (set = 0, binding = 8, std430) restrict buffer DrawCommands {
+	VkDrawIndexedIndirectCommand cmd[];
+} drawCommands;
+layout (set = 0, binding = 9) uniform sampler minSampler;
+layout (set = 0, binding = 10) uniform texture2D depthPyramid;
+
+layout (set = 1, binding = 0, std140) uniform GeoOffset {
+	uint posOffset;
+	uint texOffset;
+	uint normOffset;
+	uint tanOffset;
+	uint skinDataOffset;
+	uint indicesOffset;
+	uint skinPosOffset;
+	uint skinNormOffset;
+	uint skinTanOffset;
+	uint finalIndicesOffset;
+} geoOffsets;
+layout (set = 1, binding = 1, std140) uniform Camera {
+	mat4 view;
+	mat4 projection;
+	//x, y, width, height
+	vec4 viewport;
+	uint flags;
+} camera;
+
+layout (push_constant, std140) uniform CullData {
+	uint setId;
+	//If either is 0 occlusion culling is disabled in this pass
+	uint pyramidWidth;
+	uint pyramidHeight;
+} cullData;
+
+vec3 read_geo_vec3(uint offset){
+	return vec3(uintBitsToFloat(geometry.geo[offset]), uintBitsToFloat(geometry.geo[offset + 1]), uintBitsToFloat(geometry.geo[offset + 2]));
+};
+
+//Decode 16 bit indices manually because apparently uint16 isn't a thing in compute
+ivec3 read_indices(uint startIdx){
+	uint idx = (startIdx >> 1) + geoOffsets.indicesOffset;
+	uint index0 = geometry.geo[idx];
+	uint index1 = geometry.geo[idx + 1];
+	if((startIdx & 1) > 0){
+		return ivec3((index0 >> 16) & 0xFFFF, index1 & 0xFFFF, (index1 >> 16) & 0xFFFF);
+	} else {
+		return ivec3(index0 & 0xFFFF, (index0 >> 16) & 0xFFFF, index1 & 0xFFFF);
+	}
+};
+
+vec4 ndc_transform(vec4 clip){
+	float invW = 1.0/clip.w;
+	clip.xyz *= invW;
+	vec3 ndc = vec3(clip.xy * 0.5 + 0.5, clip.z);
+	//return vec4(ndc.x * camera.viewport[2] + camera.viewport.x, ndc.y * camera.viewport[3] + camera.viewport.y, ndc.z, invW);
+	return vec4(ndc.xyz, invW);
+}
+
+float d_min3(float f0, float f1, float f2){
+	return min(f0, min(f1, f2));
+}
+
+float d_max3(float f0, float f1, float f2){
+	return max(f0, max(f1, f2));
+}
+
+layout (local_size_x = 256) in;
+void main(){
+	if(gl_GlobalInvocationID.x == 0){
+		drawCommands.cmd[cullData.setId] = VkDrawIndexedIndirectCommand(0, 1, geoSets.sets[cullData.setId].indexOffset, 0, 0);
+	}
+	barrier();
+	//The dispatch model id contains 24 bits for the model id and 8 bits for the vertex offset (multiplied by the local size of 256, for the full 16k max model size)
+	uint dispachModelId = dispatchModelIds.ids[gl_WorkGroupID.x];
+	uint modelId = dispachModelId & 0xFFFFFF;
+	Model model = models.model[modelId];
+	uint meshId = model.meshId;
+	mat4 modelViewProjectionMatrix = camera.projection * camera.view * transforms.mat[modelId];
+	Mesh mesh = meshes.mesh[meshId];
+	uint indexOffset = (((dispachModelId >> 24) & 0xFF) * 256 + gl_LocalInvocationID.x) * 3;
+	if(indexOffset >= mesh.vertCount){
+		return;
+	}
+	ivec3 indices = read_indices(indexOffset + mesh.indexOffset);
+	uint posOffset;
+	//Position, normal, and tangent are skinned, so if this is a skinned mesh we'll read from the skinned vertices.
+	if(model.skinVerticesOffset > 0){
+		posOffset = geoOffsets.skinPosOffset + model.skinVerticesOffset * 3;
+	} else {
+		posOffset = geoOffsets.posOffset + mesh.vertexOffset * 3;
+	}
+	vec4 pos0 = modelViewProjectionMatrix * vec4(read_geo_vec3(posOffset + indices.x * 3), 1.0F);
+	vec4 pos1 = modelViewProjectionMatrix * vec4(read_geo_vec3(posOffset + indices.y * 3), 1.0F);
+	vec4 pos2 = modelViewProjectionMatrix * vec4(read_geo_vec3(posOffset + indices.z * 3), 1.0F);
+	
+
+	bool visible = true;
+	const float degenerateEpsilon = 0.000001;
+	//Backface/zero area cull
+	if(determinant(mat3(pos0.xyw, pos1.xyw, pos2.xyw)) >= 0.0){
+		visible = false;
+	}
+	//If they're all culled already, skip the additional culling
+	if(!subgroupAll(!visible)){
+		pos0 = ndc_transform(pos0);
+		pos1 = ndc_transform(pos1);
+		pos2 = ndc_transform(pos2);
+		vec2 spos0 = vec2(camera.viewport.x + pos0.x * camera.viewport[2], camera.viewport.y + pos0.y * camera.viewport[3]);
+		vec2 spos1 = vec2(camera.viewport.x + pos1.x * camera.viewport[2], camera.viewport.y + pos1.y * camera.viewport[3]);
+		vec2 spos2 = vec2(camera.viewport.x + pos2.x * camera.viewport[2], camera.viewport.y + pos2.y * camera.viewport[3]);
+		vec4 boundingBox = vec4(d_min3(spos0.x, spos1.x, spos2.x), d_min3(spos0.y, spos1.y, spos2.y), d_max3(spos0.x, spos1.x, spos2.x), d_max3(spos0.y, spos1.y, spos2.y));
+		//Microtriangle cull
+		vec4 clampedBox = vec4(ceil(boundingBox.xy - 0.5), floor(boundingBox.zw + 0.5));
+		if(clampedBox.x == clampedBox.z || clampedBox.y == clampedBox.w){
+			visible = false;
+		}
+		if(!subgroupAll(!visible)){
+			//Frustum cull
+			if(boundingBox[2] < camera.viewport.x || boundingBox[3] < camera.viewport.y || boundingBox[0] > (camera.viewport[0] + camera.viewport[2]) || boundingBox[1] > (camera.viewport[1] + camera.viewport[3])){
+				visible = false;
+			}
+			if(cullData.pyramidWidth > 0 && !subgroupAll(!visible)){
+				//Occlusion cull
+				vec2 pxSize = 0.5/vec2(cullData.pyramidWidth, cullData.pyramidHeight);
+				//boundingBox = vec4(d_min3(pos0.x, pos1.x, pos2.x), d_min3(pos0.y, pos1.y, pos2.y), d_max3(pos0.x, pos1.x, pos2.x), d_max3(pos0.y, pos1.y, pos2.y));
+				boundingBox = vec4(d_min3(spos0.x, spos1.x, spos2.x), d_min3(spos0.y, spos1.y, spos2.y), d_max3(spos0.x, spos1.x, spos2.x), d_max3(spos0.y, spos1.y, spos2.y)) * vec4(pxSize, pxSize);
+				float width = (boundingBox[2] - boundingBox[0]) * cullData.pyramidWidth;
+				float height = (boundingBox[3] - boundingBox[1]) * cullData.pyramidHeight;
+				float level = floor(log2(max(width, height)));
+				float depth = textureLod(sampler2D(depthPyramid, minSampler), (boundingBox.xy + boundingBox.zw) * 0.5, level).x;
+				if(d_max3(pos0.z, pos1.z, pos2.z) < depth){
+					visible = false;
+				}
+			}
+		}
+	}
+	uvec4 visibleBallot = subgroupBallot(visible);
+
+	uint writeIndexOffset;
+	if(gl_SubgroupInvocationID == 0){
+		uint subgroupIndexCount = subgroupBallotBitCount(visibleBallot) * 3;
+		//writeIndexOffset = atomicAdd(geometry.geo[geoOffset.finalIndicesOffset], subgroupIndexCount);
+		writeIndexOffset = atomicAdd(drawCommands.cmd[cullData.setId].indexCount, subgroupIndexCount);
+	}
+	writeIndexOffset = subgroupBroadcast(writeIndexOffset, 0);
+	if(visible){
+		uint writeIndex0 = (gl_WorkGroupID.x << 16) | indices.x;
+		uint writeIndex1 = (gl_WorkGroupID.x << 16) | indices.y;
+		uint writeIndex2 = (gl_WorkGroupID.x << 16) | indices.z;
+		
+		uint triOffset = geoOffsets.finalIndicesOffset + geoSets.sets[cullData.setId].indexOffset + writeIndexOffset + subgroupBallotExclusiveBitCount(visibleBallot) * 3;
+		geometry.geo[triOffset] = writeIndex0;
+		geometry.geo[triOffset + 1] = writeIndex1;
+		geometry.geo[triOffset + 2] = writeIndex2;
+	}
+}

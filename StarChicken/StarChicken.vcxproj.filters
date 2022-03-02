@@ -42,10 +42,7 @@
     <ClCompile Include="src\util\DrillMath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\VertexBuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\graphics\SingleBufferAllocator.cpp">
+    <ClCompile Include="src\graphics\VertexFormats.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\ShaderUniforms.cpp">
@@ -66,6 +63,30 @@
     <ClCompile Include="src\util\Windowing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\util\MSDFGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\FontRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\StagingManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui\Gui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\DynamicBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\geometry\Models.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\geometry\GeometryAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Vulkan Shooter\resources\shaders\compile.bat">
@@ -77,9 +98,6 @@
     <None Include="..\Vulkan Shooter\resources\shaders\triangle.frag">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="resources\shaders\compile.bat">
-      <Filter>Source Files</Filter>
-    </None>
     <None Include="resources\shaders\triangle.frag" />
     <None Include="resources\shaders\triangle.vert" />
     <None Include="packages.config" />
@@ -87,6 +105,27 @@
     <None Include="resources\textures\orbus.dtf" />
     <None Include="resources\textures\missing.dtf" />
     <None Include="resources\models\testmodel.dmf" />
+    <None Include="resources\shaders\text.frag" />
+    <None Include="resources\shaders\text.vert" />
+    <None Include="resources\shaders\final_post.comp" />
+    <None Include="resources\shaders\ui.vert" />
+    <None Include="resources\shaders\ui.frag" />
+    <None Include="resources\shaders\ui_line.vert" />
+    <None Include="resources\shaders\ui_line.frag" />
+    <None Include="resources\shaders\mesh_cull.comp" />
+    <None Include="resources\shaders\triangle_cull.comp" />
+    <None Include="resources\shaders\world.frag" />
+    <None Include="resources\shaders\world.vert" />
+    <None Include="resources\shaders\world_test.vert" />
+    <None Include="resources\shaders\world_test.frag" />
+    <None Include="resources\shaders\min_max_downsample.comp" />
+    <None Include="resources\shaders\world_depth.vert" />
+    <None Include="resources\shaders\world_depth.frag" />
+    <None Include="resources\shaders\world_id.vert" />
+    <None Include="resources\shaders\world_id.frag" />
+    <None Include="resources\shaders\mesh_skin.comp" />
+    <None Include="resources\shaders\triangle_debug.vert" />
+    <None Include="resources\shaders\triangle_debug.frag" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\Vulkan Shooter\resources\textures\orbus.png">
@@ -104,9 +143,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\graphics\ShaderManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\graphics\VkUtil.h">
@@ -127,10 +163,7 @@
     <ClInclude Include="src\util\DrillMath.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics\VertexBuffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\graphics\SingleBufferAllocator.h">
+    <ClInclude Include="src\graphics\VertexFormats.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\graphics\ShaderUniforms.h">
@@ -149,6 +182,33 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\util\Windowing.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\MSDFGenerator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\FontRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\StagingManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ui\Gui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\DynamicBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\geometry\Models.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\geometry\GeometryAllocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\geometry\GPUModels.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

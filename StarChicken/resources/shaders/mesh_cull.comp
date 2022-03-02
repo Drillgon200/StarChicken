@@ -1,0 +1,149 @@
+#version 460
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+#extension GL_KHR_shader_subgroup_ballot : enable
+
+struct Object {
+	uint selectionFlags;
+	uint visible;
+};
+layout (set = 0, binding = 0, std430) restrict readonly buffer Objects {
+	Object object[];
+} objects;
+struct Mesh {
+	uint vertexOffset;
+	uint indexOffset;
+	//If 0, this is not a skinned mesh. We need this because not all meshes have skinning data, and the offset won't be the same as the vertex offset.
+	uint skinDataOffset;
+	uint vertCount;
+	//Local space bounding box
+	float minX;
+	float minY;
+	float minZ;
+	float maxX;
+	float maxY;
+	float maxZ;
+};
+layout (set = 0, binding = 1, std430) restrict readonly buffer Meshes {
+	Mesh mesh[];
+} meshes;
+struct Model {
+	uint meshId;
+	uint skinMatricesOffset;
+	uint skinVerticesOffset;
+	uint objectId;
+};
+layout (set = 0, binding = 2, std430) restrict readonly buffer Models {
+	Model model[];
+} models;
+layout (set = 0, binding = 3, std430) restrict readonly buffer Transforms {
+	mat4 mat[];
+} transforms;
+layout (set = 0, binding = 4, std430) restrict writeonly buffer DispatchModelIds {
+	uint ids[];
+} dispatchModelIds;
+struct GeometrySet {
+	uint modelId[256];
+	uint setModelOffset;
+	uint setModelCount;
+	uint indexOffset;
+};
+layout (set = 0, binding = 5, std430) restrict readonly buffer GeometrySets {
+	//uint modelIds[];
+	GeometrySet sets[];
+} geoSets;
+/*struct CompactedGeoSet {
+	uint modelIds[256];
+};
+layout (set = 0, binding = 5, std430) restrict writeonly buffer CompactedSets {
+	CompactedGeoSet sets[];
+} compactedSets;*/
+struct VkDispatchIndirectCommand {
+	uint x;
+	uint y;
+	uint z;
+};
+layout (set = 0, binding = 6, std430) restrict buffer TriangleCullArgs {
+	VkDispatchIndirectCommand args[];
+} triangleCullArgs;
+//Unused
+layout (set = 0, binding = 7, std430) restrict buffer Geometry {
+	uint geo[];
+} geometry;
+struct VkDrawIndexedIndirectCommand {
+	uint indexCount;
+	uint instanceCount;
+	uint firstIndex;
+	int vertexOffset;
+	uint firstInstance;
+};
+struct MultiDrawIndrectCommand {
+	//0 or 1 in this case, set to 0 to avoid drawing anything if every mesh is culled.
+	uint drawCount;
+	VkDrawIndexedIndirectCommand command;
+};
+//Unused
+layout (set = 0, binding = 8, std430) restrict buffer DrawCommands {
+	VkDrawIndexedIndirectCommand cmd[];
+} drawCommands;
+layout (set = 0, binding = 9) uniform sampler minSampler;
+layout (set = 0, binding = 10) uniform texture2D depthPyramid;
+
+layout (set = 1, binding = 0, std140) uniform MeshOffsets {
+	uint posOffset;
+	uint texOffset;
+	uint normOffset;
+	uint tanOffset;
+	uint skinDataOffset;
+	uint indicesOffset;
+	uint skinPosOffset;
+	uint skinNormOffset;
+	uint skinTanOffset;
+	uint finalIndicesOffset;
+} meshOffsets;
+layout (set = 1, binding = 1, std140) uniform Camera {
+	mat4 view;
+	mat4 projection;
+	//x, y, width, height
+	vec4 viewport;
+	uint flags;
+} camera;
+
+layout (push_constant, std140) uniform SetOffset {
+	uint setId;
+	//If either is 0 occlusion culling is disabled in this pass
+	uint pyramidWidth;
+	uint pyramidHeight;
+} setOffset;
+
+layout (local_size_x = 256) in;
+void main(){
+	if(gl_GlobalInvocationID.x == 0){
+		triangleCullArgs.args[setOffset.setId] = VkDispatchIndirectCommand(0, 1, 1);
+	}
+	barrier();
+	uint triCullInvocationCount = 0;
+	if(gl_GlobalInvocationID.x >= geoSets.sets[setOffset.setId].setModelCount){
+		return;
+	}
+	uint modelId = geoSets.sets[setOffset.setId].modelId[setOffset.setId * 256 + gl_GlobalInvocationID.x];
+	Model model = models.model[modelId];
+	bool visible = objects.object[model.objectId].visible > 0 ? true : false;
+	//uvec4 visibleBallot = subgroupBallot(visible);
+	
+	if(visible){
+		triCullInvocationCount = ((meshes.mesh[model.meshId].vertCount / 3) + 255) / 256;
+	}
+	uint triCullOffset;
+	if(gl_SubgroupInvocationID == 0){
+		triCullOffset = atomicAdd(triangleCullArgs.args[setOffset.setId].x, subgroupAdd(triCullInvocationCount));
+	}
+	triCullOffset = subgroupBroadcast(triCullOffset, 0);
+	
+	if(visible){
+		//compactedSets.sets[setOffset.setid].modelId[compactSetOffset + subgroupBallotExclusiveBitCount(visible)] = modelId;
+		uint offset = geoSets.sets[setOffset.setId].setModelOffset + triCullOffset + subgroupExclusiveAdd(triCullInvocationCount);
+		for(uint i = 0; i < triCullInvocationCount; i++){
+			dispatchModelIds.ids[offset + i] = (i << 24) | modelId;
+		}
+	}
+}

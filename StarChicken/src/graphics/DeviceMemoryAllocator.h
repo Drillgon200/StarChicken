@@ -1,9 +1,10 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+#include "VkUtil.h"
 #include <vector>
 
-#define DEVICE_ALLOCATION_BLOCK_SIZE 64 * 1024 * 1024
+#define DEVICE_ALLOCATION_BLOCK_SIZE (64 * 1024 * 1024)
 
 namespace vku {
 
@@ -43,11 +44,12 @@ namespace vku {
 	private:
 		VkDeviceMemory memory;
 		void* memoryMapping;
-		std::vector<DeviceFreeMemoryBlob> freeBlocks;
+		std::vector<DeviceFreeMemoryBlob> freeBlocks{};
+		uint32_t size;
 		uint32_t memoryTypeIndex;
 		uint32_t blockIndex;
 	public:
-		DeviceMemoryBlock(uint32_t memIndex, uint32_t blockIndex);
+		DeviceMemoryBlock(uint32_t size, uint32_t memIndex, uint32_t blockIndex);
 		DeviceMemoryBlock(const DeviceMemoryBlock& other);
 		~DeviceMemoryBlock();
 
@@ -62,7 +64,7 @@ namespace vku {
 
 	class DeviceMemoryPool {
 	private:
-		std::vector<DeviceMemoryBlock*> blocks;
+		std::vector<DeviceMemoryBlock*> blocks{};
 		uint32_t memoryTypeIndex;
 	public:
 		DeviceMemoryPool(uint32_t memIndex);
@@ -76,10 +78,11 @@ namespace vku {
 
 	class DeviceMemoryAllocator {
 	private:
-		std::vector<DeviceMemoryPool> memoryPools;
+		std::vector<DeviceMemoryPool> memoryPools{};
+		std::vector<DeviceBuffer> deletionQueues[NUM_FRAME_DATA];
 		VkDeviceSize bufferImageGranularity;
-		uint64_t totalAllocatedBytes;
-		uint32_t totalAllocations;
+		uint64_t totalAllocatedBytes{0};
+		uint32_t totalAllocations{0};
 	public:
 		DeviceMemoryAllocator();
 		~DeviceMemoryAllocator();
@@ -89,6 +92,8 @@ namespace vku {
 		DeviceAllocation* alloc(uint32_t size, uint32_t alignment, uint32_t memoryType, DeviceAllocationType type);
 
 		void free_buffer(DeviceBuffer& buffer);
+		void queue_free_buffer(uint32_t frame, DeviceBuffer buffer);
+		void free_old_data(uint32_t frame);
 		void free(DeviceAllocation* allocation);
 
 		uint64_t total_allocated_memory();

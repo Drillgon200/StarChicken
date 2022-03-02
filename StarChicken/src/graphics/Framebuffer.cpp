@@ -1,38 +1,36 @@
 #include "Framebuffer.h"
+#include "VkUtil.h"
 #include "TextureManager.h"
 #include <assert.h>
 
 namespace vku {
-	void Framebuffer::create() {
+	void Framebuffer::create(VkCommandBuffer cmdBuf) {
 		assert(fboExtent.width != 0 && fboExtent.height != 0);
 		assert(renderPass != nullptr);
 		std::vector<VkImageView> imageViews{};
-		imageViews.push_back(*imageView);
+		if (!colorImageView) {
+			for (uint32_t i = 0; i < colorTypes.size(); i++) {
+				Texture* colorTexture = new Texture();
+				uint32_t usage = VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+				if (colorTypes[i] == TEXTURE_TYPE_ID_BUFFER) {
+					usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+				}
+				usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+				colorTexture->create(cmdBuf, fboExtent.width, fboExtent.height, 1, nullptr, colorTypes[i], usage);
+				imageViews.push_back(colorTexture->get_image_view());
+				colorTextures.push_back(colorTexture);
+			}
+		} else {
+			imageViews.push_back(*colorImageView);
+		}
 		if (hasDepthBuffer) {
-			depthTexture = new Texture();
-
-			vkQueueWaitIdle(graphicsQueue);
-			vkResetCommandBuffer(graphicsCommandBuffers[0], 0);
-			begin_command_buffer(graphicsCommandBuffers[0]);
-
-			depthTexture->create(graphicsCommandBuffers[0], fboExtent.width, fboExtent.height, 1, nullptr, TEXTURE_TYPE_DEPTH_ATTACHMENT);
-
-			end_command_buffer(graphicsCommandBuffers[0]);
-
-			VkSubmitInfo submitInfo{};
-			submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-			submitInfo.commandBufferCount = 1;
-			submitInfo.pCommandBuffers = &graphicsCommandBuffers[0];
-			submitInfo.signalSemaphoreCount = 0;
-			submitInfo.pSignalSemaphores = nullptr;
-			submitInfo.waitSemaphoreCount = 0;
-			submitInfo.pWaitSemaphores = nullptr;
-			submitInfo.pWaitDstStageMask = nullptr;
-			vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-			vkQueueWaitIdle(graphicsQueue);
-
+			if (depthTexture == nullptr) {
+				depthTexture = new Texture();
+				depthTexture->create(cmdBuf, fboExtent.width, fboExtent.height, 1, nullptr, depthType, VK_IMAGE_USAGE_SAMPLED_BIT);
+			}
 			imageViews.push_back(depthTexture->get_image_view());
 		}
+		
 		VkFramebufferCreateInfo fboInfo{};
 		fboInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		fboInfo.renderPass = *renderPass;
@@ -41,14 +39,22 @@ namespace vku {
 		fboInfo.width = fboExtent.width;
 		fboInfo.height = fboExtent.height;
 		fboInfo.layers = 1;
+		fboInfo.flags = 0;
 
 		VKU_CHECK_RESULT(vkCreateFramebuffer(device, &fboInfo, nullptr, &fbo), "Failed to create framebuffer!");
 	}
 
 	void Framebuffer::destroy() {
+		for (Texture* colorTex : colorTextures) {
+			colorTex->destroy();
+			delete colorTex;
+		}
+		colorTextures.clear();
+		colorTypes.clear();
 		if (depthTexture) {
 			depthTexture->destroy();
 			delete depthTexture;
+			depthTexture = nullptr;
 		}
 		vkDestroyFramebuffer(device, fbo, nullptr);
 	}
@@ -59,8 +65,8 @@ namespace vku {
 	VkExtent2D Framebuffer::get_extent() {
 		return fboExtent;
 	}
-	vec4f Framebuffer::get_clear_color() {
-		return clearColor;
+	VkClearValue* Framebuffer::get_clear_values() {
+		return clearValues.data();
 	}
 	VkRenderPass Framebuffer::get_render_pass() {
 		return *renderPass;

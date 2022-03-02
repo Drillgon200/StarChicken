@@ -127,7 +127,7 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;F:\vulkan_shooter\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -139,6 +139,7 @@
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <ControlFlowGuard>false</ControlFlowGuard>
+      <DisableSpecificWarnings>26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -166,10 +167,10 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\vulkan_shooter\sdk\1.2.176.1\Include;F:\vulkan_shooter\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>MaxSpeed</Optimization>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <EnableEnhancedInstructionSet>NoExtensions</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ControlFlowGuard>false</ControlFlowGuard>
@@ -177,7 +178,7 @@
       <ExceptionHandling>SyncCThrow</ExceptionHandling>
       <SupportJustMyCode>false</SupportJustMyCode>
       <OmitFramePointers>false</OmitFramePointers>
-      <DisableSpecificWarnings>26812;C26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -195,18 +196,25 @@
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\EntityComponentSystem.cpp" />
     <ClCompile Include="src\graphics\DeviceMemoryAllocator.cpp" />
+    <ClCompile Include="src\graphics\DynamicBuffer.cpp" />
     <ClCompile Include="src\graphics\Framebuffer.cpp" />
+    <ClCompile Include="src\graphics\geometry\Models.cpp" />
     <ClCompile Include="src\graphics\GraphicsPipeline.cpp" />
     <ClCompile Include="src\graphics\RenderPass.cpp" />
-    <ClCompile Include="src\graphics\SingleBufferAllocator.cpp" />
+    <ClCompile Include="src\graphics\geometry\GeometryAllocator.cpp" />
     <ClCompile Include="src\graphics\ShaderUniforms.cpp" />
+    <ClCompile Include="src\graphics\StagingManager.cpp" />
     <ClCompile Include="src\graphics\TextureManager.cpp" />
-    <ClCompile Include="src\graphics\VertexBuffer.cpp" />
+    <ClCompile Include="src\graphics\VertexFormats.cpp" />
     <ClCompile Include="src\graphics\VkUtil.cpp" />
     <ClCompile Include="src\JobSystem.cpp" />
     <ClCompile Include="src\Profiling.cpp" />
+    <ClCompile Include="src\Scene.cpp" />
+    <ClCompile Include="src\ui\Gui.cpp" />
     <ClCompile Include="src\util\DrillMath.cpp" />
     <ClCompile Include="src\util\FileDocument.cpp" />
+    <ClCompile Include="src\util\FontRenderer.cpp" />
+    <ClCompile Include="src\util\MSDFGenerator.cpp" />
     <ClCompile Include="src\util\Util.cpp" />
     <ClCompile Include="src\util\Windowing.cpp" />
   </ItemGroup>
@@ -220,9 +228,29 @@
     </MASM>
     <None Include="packages.config" />
     <None Include="resources\models\testmodel.dmf" />
-    <None Include="resources\shaders\compile.bat" />
+    <None Include="resources\shaders\mesh_skin.comp" />
+    <None Include="resources\shaders\triangle_debug.frag" />
+    <None Include="resources\shaders\triangle_debug.vert" />
+    <None Include="resources\shaders\world_depth.frag" />
+    <None Include="resources\shaders\world_depth.vert" />
+    <None Include="resources\shaders\final_post.comp" />
+    <None Include="resources\shaders\mesh_cull.comp" />
+    <None Include="resources\shaders\min_max_downsample.comp" />
+    <None Include="resources\shaders\text.frag" />
+    <None Include="resources\shaders\text.vert" />
     <None Include="resources\shaders\triangle.frag" />
     <None Include="resources\shaders\triangle.vert" />
+    <None Include="resources\shaders\triangle_cull.comp" />
+    <None Include="resources\shaders\ui.frag" />
+    <None Include="resources\shaders\ui.vert" />
+    <None Include="resources\shaders\ui_line.frag" />
+    <None Include="resources\shaders\ui_line.vert" />
+    <None Include="resources\shaders\world.frag" />
+    <None Include="resources\shaders\world.vert" />
+    <None Include="resources\shaders\world_id.frag" />
+    <None Include="resources\shaders\world_id.vert" />
+    <None Include="resources\shaders\world_test.frag" />
+    <None Include="resources\shaders\world_test.vert" />
     <None Include="resources\textures\missing.dtf" />
     <None Include="resources\textures\orbus.dtf" />
   </ItemGroup>
@@ -234,19 +262,26 @@
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\EntityComponentSystem.h" />
     <ClInclude Include="src\graphics\DeviceMemoryAllocator.h" />
+    <ClInclude Include="src\graphics\DynamicBuffer.h" />
     <ClInclude Include="src\graphics\Framebuffer.h" />
+    <ClInclude Include="src\graphics\geometry\GPUModels.h" />
+    <ClInclude Include="src\graphics\geometry\Models.h" />
     <ClInclude Include="src\graphics\GraphicsPipeline.h" />
     <ClInclude Include="src\graphics\RenderPass.h" />
-    <ClInclude Include="src\graphics\SingleBufferAllocator.h" />
+    <ClInclude Include="src\graphics\geometry\GeometryAllocator.h" />
     <ClInclude Include="src\graphics\ShaderUniforms.h" />
+    <ClInclude Include="src\graphics\StagingManager.h" />
     <ClInclude Include="src\graphics\TextureManager.h" />
-    <ClInclude Include="src\graphics\VertexBuffer.h" />
+    <ClInclude Include="src\graphics\VertexFormats.h" />
     <ClInclude Include="src\graphics\VkUtil.h" />
     <ClInclude Include="src\JobSystem.h" />
     <ClInclude Include="src\Profiling.h" />
-    <ClInclude Include="src\graphics\ShaderManager.h" />
+    <ClInclude Include="src\Scene.h" />
+    <ClInclude Include="src\ui\Gui.h" />
     <ClInclude Include="src\util\DrillMath.h" />
     <ClInclude Include="src\util\FileDocument.h" />
+    <ClInclude Include="src\util\FontRenderer.h" />
+    <ClInclude Include="src\util\MSDFGenerator.h" />
     <ClInclude Include="src\util\Util.h" />
     <ClInclude Include="src\util\Windowing.h" />
   </ItemGroup>

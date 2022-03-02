@@ -1,4 +1,5 @@
 #include "Util.h"
+#include <iostream>
 #ifdef _WIN32
 #include <Windows.h>
 #endif
@@ -20,6 +21,20 @@ namespace util {
 		UnmapViewOfFile(mapping.mapping);
 		CloseHandle(mapping.mappingHandle);
 		CloseHandle(mapping.fileHandle);
+#endif
+	}
+
+	int32_t run_program(const char* prog) {
+#ifdef _WIN32
+		FILE* program = _popen(prog, "r");
+		std::string result;
+		char buffer[256];
+		while (fgets(buffer, 256, program) != NULL) {
+			result += buffer;
+		}
+		uint32_t returnCode = _pclose(program);
+		std::cout << result << std::endl;
+		return returnCode;
 #endif
 	}
 }

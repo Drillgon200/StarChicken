@@ -5,16 +5,42 @@ namespace windowing {
 	bool windowShouldClose = false;
 	uint32_t width;
 	uint32_t height;
+	int32_t mouseDX{ 0 };
+	int32_t mouseDY{ 0 };
+	int32_t oldMx{-1};
+	int32_t oldMy{-1};
 	uint32_t framebufferWidth{ 0 };
 	uint32_t framebufferHeight{ 0 };
+	uint32_t currentCursor{CURSOR_TYPE_POINTER};
+	int32_t captureX;
+	int32_t captureY;
+	bool mouseCaptured = false;
 	void* userPointer = nullptr;
 
+
 #ifdef _WIN32
+#define USAGE_PAGE_GENERIC 0x01
+#define USAGE_PAGE_GAME 0x05
+#define MOUSE_USAGE 0x02
+#define KEYBOARD_USAGE 0x06
+
 	const wchar_t* CLASS_NAME = L"Star Chicken Windowing";
-	const uint32_t REQUIRED_EXTENSION_COUNT = 2;
+	inline constexpr uint32_t REQUIRED_EXTENSION_COUNT = 2;
 	const char* REQUIRED_EXTENSIONS[REQUIRED_EXTENSION_COUNT] = { VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
 	HINSTANCE hInstance;
 	HWND hwnd;
+	HCURSOR cursorPointer;
+	HCURSOR cursorSizeVertical;
+	HCURSOR cursorSizeHorizontal;
+	HCURSOR cursorSizeDiagForward;
+	HCURSOR cursorSizeDiagBackward;
+	HCURSOR cursorSizeAll;
+	HCURSOR cursorBeam;
+	HCURSOR cursorLoading;
+
+	void (*windowResizeCallback)(Window*, uint32_t, uint32_t) { nullptr };
+	void (*keyCallback)(Window*, uint32_t, uint32_t) { nullptr };
+	void (*mouseCallback)(Window*, uint32_t, uint32_t) { nullptr };
 
 	LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		switch (uMsg) {
@@ -22,8 +48,73 @@ namespace windowing {
 			PostQuitMessage(0);
 			return 0;
 		case WM_KEYDOWN:
+			if (wParam < 0 || wParam >= MAX_KEY_CODE) {
+				break;
+			}
+			//std::cout << "Down: " << lParam << std::endl;
+			if (keyCallback) {
+				keyCallback(&hwnd, wParam, KEY_STATE_DOWN);
+			}
 			return 0;
 		case WM_KEYUP:
+			if (wParam < 0 || wParam >= MAX_KEY_CODE) {
+				break;
+			}
+			//std::cout << "Up: " << lParam << std::endl;
+			if (keyCallback) {
+				keyCallback(&hwnd, wParam, KEY_STATE_UP);
+			}
+			return 0;
+		case WM_INPUT:
+		{
+			UINT size = sizeof(RAWINPUT);
+			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER));
+			RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(alloca(size));
+			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER));
+			if (raw->header.dwType == RIM_TYPEMOUSE) {
+				RAWMOUSE rawMouse = raw->data.mouse;
+				//std::cout << rawMouse.usButtonData << " " << rawMouse.ulButtons << " " << rawMouse.ulRawButtons << " " << rawMouse.usButtonFlags << std::endl;
+				if ((rawMouse.usFlags & MOUSE_MOVE_ABSOLUTE) == MOUSE_MOVE_ABSOLUTE) {
+					bool isVirtualDesktop = (rawMouse.usFlags & MOUSE_VIRTUAL_DESKTOP) == MOUSE_VIRTUAL_DESKTOP;
+
+					int width = GetSystemMetrics(isVirtualDesktop ? SM_CXVIRTUALSCREEN : SM_CXSCREEN);
+					int height = GetSystemMetrics(isVirtualDesktop ? SM_CYVIRTUALSCREEN : SM_CYSCREEN);
+
+					int absoluteX = int((rawMouse.lLastX / 65535.0f) * width);
+					int absoluteY = int((rawMouse.lLastY / 65535.0f) * height);
+					if (oldMx != -1) {
+						mouseDX += (absoluteX - oldMx);
+						mouseDY += (absoluteY - oldMy);
+					}
+					oldMx = absoluteX;
+					oldMy = absoluteY;
+				} else {
+					mouseDX += rawMouse.lLastX;
+					mouseDY += rawMouse.lLastY;
+				}
+				if (mouseCallback) {
+					for (ULONG i = 0; i < 5; i++) {
+						ULONG currentButton = (rawMouse.ulButtons >> (i * 2)) & 1;
+						if (currentButton) {
+							mouseCallback(&hwnd, MOUSE_0 + i, KEY_STATE_DOWN);
+						}
+						currentButton = (rawMouse.ulButtons >> (i * 2 + 1)) & 1;
+						if (currentButton) {
+							mouseCallback(&hwnd, MOUSE_0 + i, KEY_STATE_UP);
+						}
+					}
+					if (rawMouse.usButtonFlags & RI_MOUSE_WHEEL) {
+						mouseCallback(&hwnd, MOUSE_WHEEL, rawMouse.usButtonData);
+					}
+				}
+				if (mouseCaptured) {
+					SetCursorPos(captureX, captureY);
+				}
+			} else if (raw->header.dwType == RIM_TYPEKEYBOARD) {
+				RAWKEYBOARD rawKeyboard = raw->data.keyboard;
+				//std::cout << "RAW: " << rawKeyboard.VKey << " " << rawKeyboard.Flags;
+			}
+		}
 			return 0;
 		case WM_SIZE:
 			width = LOWORD(lParam);
@@ -32,22 +123,18 @@ namespace windowing {
 				RECT rect{};
 				if (GetWindowRect(hwnd, &rect)) {
 					framebufferWidth = rect.right - rect.left;
-					framebufferHeight = rect.top - rect.bottom;
+					framebufferHeight = rect.bottom - rect.top;
+				}
+				if (windowResizeCallback) {
+					windowResizeCallback(&hwnd, width, height);
 				}
 			}
 			return 0;
 		case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			HDC hdc = BeginPaint(hwnd, &ps);
-
-
-
-			FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
-
-			EndPaint(hwnd, &ps);
-		}
-		return 0;
+			return DefWindowProc(hwnd, uMsg, wParam, lParam);
+		case WM_SETCURSOR:
+			set_cursor(currentCursor);
+			return 0;
 		case WM_CLOSE:
 			windowShouldClose = true;
 			return 0;
@@ -56,11 +143,18 @@ namespace windowing {
 	}
 #endif
 
-	void (*windowResizeCallback)(Window*, uint32_t, uint32_t);
-
 	void init() {
 #ifdef _WIN32
 		hInstance = GetModuleHandle(0);
+		
+		cursorPointer = LoadCursor(NULL, IDC_ARROW);
+		cursorSizeVertical = LoadCursor(NULL, IDC_SIZENS);
+		cursorSizeHorizontal = LoadCursor(NULL, IDC_SIZEWE);
+		cursorSizeDiagForward = LoadCursor(NULL, IDC_SIZENESW);
+		cursorSizeDiagBackward = LoadCursor(NULL, IDC_SIZENWSE);
+		cursorSizeAll = LoadCursor(NULL, IDC_SIZEALL);
+		cursorBeam = LoadCursor(NULL, IDC_IBEAM);
+		cursorLoading = LoadCursor(NULL, IDC_WAIT);
 #endif
 	}
 
@@ -90,6 +184,19 @@ namespace windowing {
 			framebufferWidth = rect.right - rect.left;
 			framebufferHeight = rect.bottom - rect.top;
 		}
+		RAWINPUTDEVICE mouse{};
+		RAWINPUTDEVICE keyboard{};
+		mouse.hwndTarget = hwnd;
+		mouse.usUsagePage = USAGE_PAGE_GENERIC;
+		mouse.usUsage = MOUSE_USAGE;
+		mouse.dwFlags = RIDEV_INPUTSINK;
+		keyboard.hwndTarget = hwnd;
+		keyboard.usUsagePage = USAGE_PAGE_GENERIC;
+		keyboard.usUsage = KEYBOARD_USAGE;
+		keyboard.dwFlags = RIDEV_INPUTSINK;
+		RAWINPUTDEVICE devices[] = { mouse, keyboard };
+		RegisterRawInputDevices(devices, 2, sizeof(RAWINPUTDEVICE));
+
 		return &hwnd;
 #endif
 	}
@@ -151,7 +258,104 @@ namespace windowing {
 		windowing::windowResizeCallback = windowResizeCallback;
 	}
 
+	void set_keyboard_callback(Window* window, void(*keyCallback)(Window* window, uint32_t key, uint32_t state)) {
+		windowing::keyCallback = keyCallback;
+	}
+
+	void set_mouse_callback(Window* window, void(*mouseCallback)(Window* window, uint32_t button, uint32_t state)) {
+		windowing::mouseCallback = mouseCallback;
+	}
+
 	void cleanup() {
+#ifdef _WIN32
 		DestroyWindow(hwnd);
+#endif
+	}
+
+	void get_delta_mouse(int32_t* x, int32_t* y) {
+		*x = mouseDX;
+		*y = mouseDY;
+		mouseDX = 0;
+		mouseDY = 0;
+	}
+
+	void get_mouse(int32_t* x, int32_t* y) {
+#ifdef _WIN32
+		POINT point;
+		GetCursorPos(&point);
+		ScreenToClient(hwnd, &point);
+		*x = point.x;
+		*y = point.y;
+#endif
+	}
+
+	void set_mouse(int32_t x, int32_t y) {
+#ifdef _WIN32
+		POINT point;
+		point.x = x;
+		point.y = y;
+		ClientToScreen(hwnd, &point);
+		SetCursorPos(point.x, point.y);
+#endif
+	}
+
+	void set_cursor(uint32_t cursor) {
+		if (mouseCaptured) {
+			return;
+		}
+		currentCursor = cursor;
+#ifdef _WIN32
+		switch (cursor) {
+		case CURSOR_TYPE_NONE:
+			SetCursor(NULL);
+			return;
+		case CURSOR_TYPE_POINTER:
+			SetCursor(cursorPointer);
+			return;
+		case CURSOR_TYPE_SIZE_VERTICAL:
+			SetCursor(cursorSizeVertical);
+			return;
+		case CURSOR_TYPE_SIZE_HORIZONTAL:
+			SetCursor(cursorSizeHorizontal);
+			return;
+		case CURSOR_TYPE_SIZE_DIAG_FORWARD:
+			SetCursor(cursorSizeDiagForward);
+			return;
+		case CURSOR_TYPE_SIZE_DIAG_BACKWARD:
+			SetCursor(cursorSizeDiagBackward);
+			return;
+		case CURSOR_TYPE_SIZE_ALL:
+			SetCursor(cursorSizeAll);
+			return;
+		case CURSOR_TYPE_BEAM:
+			SetCursor(cursorBeam);
+			return;
+		case CURSOR_TYPE_LOADING:
+			SetCursor(cursorLoading);
+			return;
+		}
+#endif
+	}
+
+	void set_mouse_captured(bool capture) {
+#ifdef _WIN32
+		if (capture) {
+			SetCapture(hwnd);
+			POINT cursorPos;
+			GetCursorPos(&cursorPos);
+			captureX = cursorPos.x;
+			captureY = cursorPos.y;
+			SetCursorPos(captureX, captureY);
+			set_cursor(CURSOR_TYPE_NONE);
+			mouseCaptured = true;
+		} else {
+			mouseCaptured = false;
+			ReleaseCapture();
+			set_cursor(CURSOR_TYPE_POINTER);
+		}
+#endif
+	}
+	bool mouse_captured() {
+		return mouseCaptured;
 	}
 }
