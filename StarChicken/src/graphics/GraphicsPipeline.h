@@ -2,13 +2,12 @@
 
 #include <string>
 #include <vulkan/vulkan.h>
+#include <vector>
 
 namespace vku {
 	class RenderPass;
 	class VertexFormat;
 	class DescriptorSet;
-
-	void recreate_graphics_pipelines();
 
 	class ComputePipeline {
 	private:

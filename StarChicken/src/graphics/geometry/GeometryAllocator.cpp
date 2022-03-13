@@ -2,10 +2,11 @@
 #include "..\StagingManager.h"
 #include "..\VertexFormats.h"
 #include "Models.h"
-#include "..\..\Scene.h"
+#include "..\..\scene\Scene.h"
 #include "..\..\util\FileDocument.h"
 #include "..\RenderPass.h"
 #include "..\..\Engine.h"
+#include "..\..\RenderSubsystem.h"
 
 namespace vku {
 
@@ -380,7 +381,7 @@ namespace vku {
 		geoOffsetBuffer = new UniformBuffer<WorldGeometryOffsets>(true, false, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT);
 		cameraBuffer = new UniformBuffer<GpuCamera>(true, true, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT);
 
-		cullingSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, modelTransforms, dispatchModelIds, gpuGeometrySets, triangleCullArgs, gpuGeometry, drawArgs, engine::minSampler, depthPyramidUniform });
+		cullingSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, modelTransforms, dispatchModelIds, gpuGeometrySets, triangleCullArgs, gpuGeometry, drawArgs, engine::rendering.minSampler, depthPyramidUniform });
 		drawSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, modelTransforms, dispatchModelIds, gpuGeometrySets, gpuGeometry });
 		worldGeoDataSet = create_descriptor_set({ geoOffsetBuffer, cameraBuffer });
 		skinningSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, gpuGeometry, skinMatrices, skinModelIdsByWorkgroup });

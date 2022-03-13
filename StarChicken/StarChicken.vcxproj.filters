@@ -72,7 +72,7 @@
     <ClCompile Include="src\graphics\StagingManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Scene.cpp">
+    <ClCompile Include="src\scene\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ui\Gui.cpp">
@@ -85,6 +85,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\geometry\GeometryAllocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\Tessellator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -126,6 +129,10 @@
     <None Include="resources\shaders\mesh_skin.comp" />
     <None Include="resources\shaders\triangle_debug.vert" />
     <None Include="resources\shaders\triangle_debug.frag" />
+    <None Include="resources\shaders\colored_fullbright.vert" />
+    <None Include="resources\shaders\colored_fullbright.frag" />
+    <None Include="resources\shaders\depth.vert" />
+    <None Include="resources\shaders\depth.frag" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\Vulkan Shooter\resources\textures\orbus.png">
@@ -193,7 +200,7 @@
     <ClInclude Include="src\graphics\StagingManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Scene.h">
+    <ClInclude Include="src\scene\Scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ui\Gui.h">
@@ -209,6 +216,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\graphics\geometry\GPUModels.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\Tessellator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene\SceneRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RenderSubsystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\InputSubsystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

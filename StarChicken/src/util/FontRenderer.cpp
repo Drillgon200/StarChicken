@@ -2,6 +2,7 @@
 #include "../graphics/ShaderUniforms.h"
 #include "../graphics/VertexFormats.h"
 #include "../Engine.h"
+#include "../RenderSubsystem.h"
 #include "../util/Util.h"
 #include "../graphics/StagingManager.h"
 #include "../graphics/VkUtil.h"
@@ -19,8 +20,9 @@ namespace text {
 	struct StringRenderData {
 		mat4f matrix;
 		uint32_t glyphArrayOffset;
+		uint32_t flags;
 		//Make sure tightly packed array is aligned to vec4
-		uint8_t padding[12];
+		uint8_t padding[8];
 	};
 	struct GlyphRenderData {
 		vec2f offset;
@@ -64,12 +66,12 @@ namespace text {
 		stringMatrix.set_identity();
 		textDataBuffer = new vku::UniformSSBO<GlyphRenderData>(MAX_CHAR_RENDER_COUNT, true, VK_SHADER_STAGE_VERTEX_BIT);
 		stringDataBuffer = new vku::UniformSSBO<StringRenderData>(MAX_STRING_RENDER_COUNT, true, VK_SHADER_STAGE_VERTEX_BIT);
-		textDescSet = vku::create_descriptor_set({ engine::bilinearSampler, engine::textureArray, textDataBuffer, stringDataBuffer });
+		textDescSet = vku::create_descriptor_set({ engine::rendering.bilinearSampler, engine::rendering.textureArray, textDataBuffer, stringDataBuffer });
 
 		indirectDrawBuffer = vku::generalAllocator->alloc_buffer(sizeof(VkDrawIndirectCommand) * MAX_STRING_RENDER_COUNT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	}
 
-	void creat_text_quad() {
+	void create_text_quad() {
 		vertexBuffer = vku::generalAllocator->alloc_buffer(6 * sizeof(TextVertex), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		VkCommandBuffer stagingCmdBuf;
 		VkBuffer stagingBuffer;
@@ -116,7 +118,7 @@ namespace text {
 		return whitespace;
 	}
 
-	void FontRenderer::draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z, float r, float g, float b, float a) {
+	void FontRenderer::draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z, float r, float g, float b, float a, uint32_t flags) {
 		if (stringRenderCount >= MAX_STRING_RENDER_COUNT) {
 			throw std::runtime_error("Too many rendered strings!");
 		}
@@ -132,6 +134,7 @@ namespace text {
 		strData.matrix.set_identity().translate_global({x, y, z}).scale(fontScale);
 		stringMatrix.mul(strData.matrix, strData.matrix);
 		strData.glyphArrayOffset = charRenderCount;
+		strData.flags = flags;
 		stringDataBuffer->update(strData, stringRenderCount);
 
 		vec2f currentOffset{ 0, 0 };
@@ -188,8 +191,8 @@ namespace text {
 		charRenderCount += instanceCount;
 	}
 
-	void FontRenderer::draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z) {
-		draw_string(str, fontScale, characterSpacing, x, y, z, 0.5F, 0.5F, 0.5F, 1.0F);
+	void FontRenderer::draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z, uint32_t flags) {
+		draw_string(str, fontScale, characterSpacing, x, y, z, 0.5F, 0.5F, 0.5F, 1.0F, flags);
 	}
 
 	void FontRenderer::render_cached_strings(vku::GraphicsPipeline& pipeline) {
@@ -221,7 +224,7 @@ namespace text {
 		for (uint32_t i = 0; i < numGlyphs; i++) {
 			char* pchar = reinterpret_cast<char*>(&data[0]);
 			float* sizes = reinterpret_cast<float*>(&data[1]);
-			uint16_t texArrayIdx = engine::textureArray->alloc_descriptor_slot();
+			uint16_t texArrayIdx = engine::rendering.textureArray->alloc_descriptor_slot();
 			vku::Texture* tex = new vku::Texture();
 			glyphData[*pchar] = GlyphData{ tex, texArrayIdx, sizes[0], sizes[1] };
 			orderedChars.push_back(*pchar);
@@ -237,7 +240,7 @@ namespace text {
 			char glyph = orderedChars[i];
 			GlyphData& gdata = glyphData[glyph];
 			gdata.texture->create(vku::transferCommandBuffer, width, height, 1, data, vku::TEXTURE_TYPE_NORMAL, VK_IMAGE_USAGE_SAMPLED_BIT);
-			engine::textureArray->update_texture(gdata.textureArrayIdx, gdata.texture);
+			engine::rendering.textureArray->update_texture(gdata.textureArrayIdx, gdata.texture);
 			data += imageSize;
 		}
 	}
@@ -247,7 +250,7 @@ namespace text {
 			char glyph = orderedChars[i];
 			GlyphData& gdata = glyphData[glyph];
 			vku::delete_texture(gdata.texture);
-			engine::textureArray->free_descriptor_slot(gdata.textureArrayIdx);
+			engine::rendering.textureArray->free_descriptor_slot(gdata.textureArrayIdx);
 		}
 	}
 }

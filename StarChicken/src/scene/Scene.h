@@ -1,11 +1,11 @@
 #pragma once
 
-#include "graphics/VkUtil.h"
-#include "util/DrillMath.h"
-#include "graphics/VertexFormats.h"
-#include "graphics/geometry/GeometryAllocator.h"
-#include "EntityComponentSystem.h"
-#include "graphics/geometry/Models.h"
+#include "../graphics/VkUtil.h"
+#include "../util/DrillMath.h"
+#include "../graphics/VertexFormats.h"
+#include "../graphics/geometry/GeometryAllocator.h"
+#include "../EntityComponentSystem.h"
+#include "../graphics/geometry/Models.h"
 
 namespace vku {
 	class Framebuffer;

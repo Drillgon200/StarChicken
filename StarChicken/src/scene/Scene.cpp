@@ -1,9 +1,10 @@
 #include "Scene.h"
-#include "graphics/geometry/Models.h"
-#include "Engine.h"
-#include "graphics/Framebuffer.h"
-#include "graphics/RenderPass.h"
-#include "util/Util.h"
+#include "../graphics/geometry/Models.h"
+#include "../Engine.h"
+#include "../RenderSubsystem.h"
+#include "../graphics/Framebuffer.h"
+#include "../graphics/RenderPass.h"
+#include "../util/Util.h"
 
 namespace scene {
 
@@ -65,7 +66,7 @@ namespace scene {
 				depthPyramidReadUniforms[i] = new vku::UniformTexture2D(depthPyramid->get_image_view(i - 1), VK_SHADER_STAGE_COMPUTE_BIT, VK_IMAGE_LAYOUT_GENERAL);
 			}
 			depthPyramidWriteUniforms[i] = new vku::UniformStorageImage(depthPyramid->get_image_view(i));
-			depthPyramidDownsampleSets[i] = vku::create_descriptor_set({ depthPyramidReadUniforms[i], depthPyramidWriteUniforms[i], engine::minSampler, engine::maxSampler });
+			depthPyramidDownsampleSets[i] = vku::create_descriptor_set({ depthPyramidReadUniforms[i], depthPyramidWriteUniforms[i], engine::rendering.minSampler, engine::rendering.maxSampler });
 		}
 		if (depthPyramidUniform) {
 			for (uint32_t i = 0; i < NUM_FRAME_DATA; i++) {

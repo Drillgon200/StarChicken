@@ -16,6 +16,7 @@
 #include "StagingManager.h"
 #include <filesystem>
 #include "..\util\Util.h"
+#include "Tessellator.h"
 
 namespace vku {
 
@@ -77,6 +78,8 @@ namespace vku {
 
 	StagingManager* transferStagingManager;
 	StagingManager* graphicsStagingManager;
+
+	Tessellator* tessellator;
 
 	Texture* missingTexture = nullptr;
 	Texture* whiteTexture = nullptr;
@@ -937,6 +940,8 @@ namespace vku {
 		transferStagingManager->init(transferQueue, deviceQueueFamilyIndices.transferFamily.value());
 		graphicsStagingManager->init(graphicsQueue, deviceQueueFamilyIndices.graphicsFamily.value());
 
+		tessellator = new Tessellator();
+
 		vkWaitForFences(vku::device, 1, &vku::transferFence, VK_TRUE, UINT64_MAX);
 		vkResetFences(vku::device, 1, &vku::transferFence);
 
@@ -961,6 +966,8 @@ namespace vku {
 		delete_texture(missingTexture);
 		delete_texture(whiteTexture);
 		descriptorSets.clear();
+
+		delete tessellator;
 
 		transferStagingManager->destroy();
 		graphicsStagingManager->destroy();

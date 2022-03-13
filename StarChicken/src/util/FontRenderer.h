@@ -10,6 +10,11 @@ namespace vku {
 
 namespace text {
 
+	enum StringFlags {
+		STRING_FLAG_MULTISAMPLE = 1,
+		STRING_FLAG_SUBPIXEL = 2
+	};
+
 	extern vku::DescriptorSet* textDescSet;
 
 	struct CharPair {
@@ -34,7 +39,7 @@ namespace text {
 
 	void set_matrix(mat4f& mat);
 	void init();
-	void creat_text_quad();
+	void create_text_quad();
 
 	void cleanup();
 
@@ -46,8 +51,8 @@ namespace text {
 	public:
 		FontRenderer();
 
-		void draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z, float r, float g, float b, float a);
-		void draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z);
+		void draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z, float r, float g, float b, float a, uint32_t flags);
+		void draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z, uint32_t flags);
 		void render_cached_strings(vku::GraphicsPipeline& pipeline);
 
 		void load(std::wstring fileName);

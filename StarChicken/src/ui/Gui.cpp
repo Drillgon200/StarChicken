@@ -1,7 +1,9 @@
 #include "Gui.h"
 #include "..\Engine.h"
+#include "..\RenderSubsystem.h"
+#include "..\InputSubsystem.h"
 #include "..\util\Util.h"
-#include "..\Scene.h"
+#include "..\scene\Scene.h"
 
 #define MIN_PANEL_SIZE 40.0F
 #define PANEL_PADDING 1.0F
@@ -169,7 +171,7 @@ namespace ui {
 			nineSlice.ySlice[0] = 0.2F;
 			nineSlice.ySlice[1] = 0.8F;
 			AxisAlignedBB2Df box = boundingBox.expand(-PANEL_PADDING);
-			draw_nine_sliced(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY, 0, false, 0.26F, 0.26F, 0.26F, 1.0F, nineSlice, engine::whiteTexIdx, 0);
+			draw_nine_sliced(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY, 0, false, 0.26F, 0.26F, 0.26F, 1.0F, nineSlice, engine::rendering.whiteTexIdx, 0);
 			for (uint32_t i = 0; i < widgets.size(); i++) {
 				widgets[i].render();
 			}
@@ -366,7 +368,7 @@ namespace ui {
 
 	void Panel::key_typed(uint32_t key, uint32_t action) {
 		if (!child0) {
-			if ((key == windowing::KEY_R) && engine::keyState[windowing::KEY_CTRL] && (action == windowing::KEY_STATE_DOWN)) {
+			if ((key == windowing::KEY_R) && engine::userInput.is_key_down(windowing::KEY_CTRL) && (action == windowing::KEY_STATE_DOWN)) {
 				vec2f mousePos = windowing::get_mouse();
 				float distX = std::min(boundingBox.maxX - mousePos.x, mousePos.x - boundingBox.minX);
 				float distY = std::min(boundingBox.maxY - mousePos.y, mousePos.y - boundingBox.minY);
@@ -425,7 +427,7 @@ namespace ui {
 		nineSlice.ySlice[0] = 0.2F;
 		nineSlice.ySlice[1] = 0.8F;
 		AxisAlignedBB2Df box = boundingBox.expand(-PANEL_PADDING);
-		draw_nine_sliced(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY, 0, false, 0.0F, 0.0F, 0.0F, 0.0F, nineSlice, engine::whiteTexIdx, 0);
+		draw_nine_sliced(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY, 0, false, 0.0F, 0.0F, 0.0F, 0.0F, nineSlice, engine::rendering.whiteTexIdx, 0);
 		for (uint32_t i = 0; i < widgets.size(); i++) {
 			widgets[i].render();
 		}
@@ -445,13 +447,12 @@ namespace ui {
 		if (windowing::mouse_captured() || (gui->mouseCaptureBox != &boundingBox)) {
 			return;
 		}
-		if (engine::mouseState[windowing::MOUSE_MIDDLE]) {
-			
+		if (engine::userInput.is_mouse_down(windowing::MOUSE_MIDDLE)) {
 			if (camera->orbitOffset == 0.0F) {
 				camera->set_orbit_offset(prevCamOrbitOffset);
 				camera->set_position(camera->position + camera->forwardVector * camera->orbitOffset);
 			}
-			if (engine::keyState[windowing::KEY_SHIFT]) {
+			if (engine::userInput.is_key_down(windowing::KEY_SHIFT)) {
 				vec3f pos1 = camera->unproject(vec2f{ x, y }, camera->orbitOffset);
 				vec3f pos2 = camera->unproject(vec2f{ x + dx, y + dy }, camera->orbitOffset);
 				vec3f position = camera->position;
@@ -490,31 +491,31 @@ namespace ui {
 		float forwardMovement = 0.0F;
 		float sideMovement = 0.0F;
 		float verticalMovement = 0.0F;
-		if (engine::keyState[windowing::KEY_W]) {
+		if (engine::userInput.is_key_down(windowing::KEY_W)) {
 			forwardMovement += 5.0F;
 		}
-		if (engine::keyState[windowing::KEY_A]) {
+		if (engine::userInput.is_key_down(windowing::KEY_A)) {
 			sideMovement -= 5.0F;
 		}
-		if (engine::keyState[windowing::KEY_S]) {
+		if (engine::userInput.is_key_down(windowing::KEY_S)) {
 			forwardMovement -= 5.0F;
 		}
-		if (engine::keyState[windowing::KEY_D]) {
+		if (engine::userInput.is_key_down(windowing::KEY_D)) {
 			sideMovement += 5.0F;
 		}
-		if (engine::keyState[windowing::KEY_SPACE]) {
+		if (engine::userInput.is_key_down(windowing::KEY_SPACE)) {
 			verticalMovement += 5.0F;
 		}
-		if (engine::keyState[windowing::KEY_SHIFT]) {
+		if (engine::userInput.is_key_down(windowing::KEY_SHIFT)) {
 			verticalMovement -= 5.0F;
 		}
 
 		vec3f camPos = camera->position;
 		vec3f rotation = camera->rotation;
 
-		rotation.x -= engine::deltaMouse.y * 0.15F;
+		rotation.x -= engine::userInput.get_delta_mouse().y * 0.15F;
 		rotation.x = clamp<float>(rotation.x, -90.0F, 90.0F);
-		rotation.y -= engine::deltaMouse.x * 0.15F;
+		rotation.y -= engine::userInput.get_delta_mouse().x * 0.15F;
 		camera->set_rotation(rotation).update_cam_transform();
 
 		camPos += camera->get_forward_vector() * forwardMovement * engine::deltaTime;
@@ -568,7 +569,7 @@ namespace ui {
 		draw_rect(x, y, width, height, zLevel, uMin, vMin, uMax, vMax, 1.0F, 1.0F, 1.0F, 1.0F, texIdx, flags);
 	}
 	void draw_rect(float x, float y, float width, float height, float zLevel, float uMin, float vMin, float uMax, float vMax, uint16_t flags) {
-		draw_rect(x, y, width, height, zLevel, uMin, vMin, uMax, vMax, engine::whiteTexIdx, flags);
+		draw_rect(x, y, width, height, zLevel, uMin, vMin, uMax, vMax, engine::rendering.whiteTexIdx, flags);
 	}
 
 	void draw_xtiled_rect(float x, float y, float width, float height, float tileWidth, float zLevel, float uMin, float vMin, float uMax, float vMax, vec4ui8 color, uint16_t texIdx, uint16_t flags) {

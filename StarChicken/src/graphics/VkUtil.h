@@ -20,11 +20,11 @@ namespace vku {
 	class DescriptorSet;
 	class DescriptorAllocator;
 	class Framebuffer;
-	class SingleBufferAllocator;
 	class DeviceMemoryAllocator;
 	class Texture;
 	class StagingManager;
 	class RenderPass;
+	class Tessellator;
 
 	extern VkInstance instance;
 	extern VkPhysicalDeviceProperties deviceProperties;
@@ -44,6 +44,8 @@ namespace vku {
 	extern VkQueue presentQueue;
 
 	extern DescriptorAllocator* descriptorSetAllocator;
+
+	extern Tessellator* tessellator;
 
 	extern VkSemaphore transferSemaphore;
 	extern VkFence transferFence;

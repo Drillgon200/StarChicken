@@ -204,12 +204,13 @@
     <ClCompile Include="src\graphics\geometry\GeometryAllocator.cpp" />
     <ClCompile Include="src\graphics\ShaderUniforms.cpp" />
     <ClCompile Include="src\graphics\StagingManager.cpp" />
+    <ClCompile Include="src\graphics\Tessellator.cpp" />
     <ClCompile Include="src\graphics\TextureManager.cpp" />
     <ClCompile Include="src\graphics\VertexFormats.cpp" />
     <ClCompile Include="src\graphics\VkUtil.cpp" />
     <ClCompile Include="src\JobSystem.cpp" />
     <ClCompile Include="src\Profiling.cpp" />
-    <ClCompile Include="src\Scene.cpp" />
+    <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\ui\Gui.cpp" />
     <ClCompile Include="src\util\DrillMath.cpp" />
     <ClCompile Include="src\util\FileDocument.cpp" />
@@ -228,6 +229,10 @@
     </MASM>
     <None Include="packages.config" />
     <None Include="resources\models\testmodel.dmf" />
+    <None Include="resources\shaders\colored_fullbright.frag" />
+    <None Include="resources\shaders\colored_fullbright.vert" />
+    <None Include="resources\shaders\depth.frag" />
+    <None Include="resources\shaders\depth.vert" />
     <None Include="resources\shaders\mesh_skin.comp" />
     <None Include="resources\shaders\triangle_debug.frag" />
     <None Include="resources\shaders\triangle_debug.vert" />
@@ -271,12 +276,16 @@
     <ClInclude Include="src\graphics\geometry\GeometryAllocator.h" />
     <ClInclude Include="src\graphics\ShaderUniforms.h" />
     <ClInclude Include="src\graphics\StagingManager.h" />
+    <ClInclude Include="src\graphics\Tessellator.h" />
     <ClInclude Include="src\graphics\TextureManager.h" />
     <ClInclude Include="src\graphics\VertexFormats.h" />
     <ClInclude Include="src\graphics\VkUtil.h" />
+    <ClInclude Include="src\InputSubsystem.h" />
     <ClInclude Include="src\JobSystem.h" />
     <ClInclude Include="src\Profiling.h" />
-    <ClInclude Include="src\Scene.h" />
+    <ClInclude Include="src\RenderSubsystem.h" />
+    <ClInclude Include="src\scene\Scene.h" />
+    <ClInclude Include="src\scene\SceneRenderer.h" />
     <ClInclude Include="src\ui\Gui.h" />
     <ClInclude Include="src\util\DrillMath.h" />
     <ClInclude Include="src\util\FileDocument.h" />

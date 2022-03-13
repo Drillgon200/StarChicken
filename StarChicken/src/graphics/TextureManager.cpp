@@ -59,6 +59,7 @@ namespace vku {
 		case TEXTURE_TYPE_DEPTH_MINMAX_MIP: imageFormat = VK_FORMAT_R32G32_SFLOAT; break;
 		case TEXTURE_TYPE_ID_BUFFER: imageFormat = VK_FORMAT_R32_SINT; break;
 		}
+		VK_IMAGE_VIEW_TYPE_2D;
 
 		VkImageCreateInfo imageInfo{};
 		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
