@@ -963,8 +963,8 @@ namespace vku {
 	}
 
 	void cleanup_vulkan() {
-		delete_texture(missingTexture);
-		delete_texture(whiteTexture);
+		delete missingTexture;
+		delete whiteTexture;
 		descriptorSets.clear();
 
 		delete tessellator;

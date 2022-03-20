@@ -275,7 +275,9 @@ namespace vku {
 
 		void set_render_pass(RenderPass* renderPass, RenderPass* depthRenderPass, RenderPass* objectIdPass);
 		void set_render_desc_set(DescriptorSet* descSet);
-		void init(uint32_t startVertSize, uint32_t startIdxSize, uint32_t startSkinDataSize, uint32_t startSkinnedVertSize, uint32_t startFinalIdxSize, UniformTexture2D* depthPyramidUniform);
+		void init(uint32_t startVertSize, uint32_t startIdxSize, uint32_t startSkinDataSize, uint32_t startSkinnedVertSize, uint32_t startFinalIdxSize);
+		void create_descriptor_sets(UniformTexture2D* depthPyramidUniform);
+		void create_pipelines();
 		void cleanup();
 
 		VkBuffer get_buffer();

@@ -65,7 +65,11 @@ namespace vku {
 		pipelines.push_back(this);
 	}
 
-	void GraphicsPipeline::build() {
+	GraphicsPipeline::~GraphicsPipeline() {
+		destroy();
+	}
+
+	GraphicsPipeline* GraphicsPipeline::build() {
 		assert(renderPass != nullptr || vkRenderPass != nullptr);
 
 		std::string fileLoc = "resources/shaders/spirv/" + shaderName + ".vspv";
@@ -222,11 +226,17 @@ namespace vku {
 
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
 		vkDestroyShaderModule(device, fragShaderModule, nullptr);
+
+		return this;
 	}
 
 	void GraphicsPipeline::destroy() {
+		if (pipeline == VK_NULL_HANDLE) {
+			return;
+		}
 		vkDestroyPipeline(device, pipeline, nullptr);
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+		pipeline = VK_NULL_HANDLE;
 	}
 
 	void GraphicsPipeline::bind(VkCommandBuffer commandBuffer) {
@@ -237,7 +247,11 @@ namespace vku {
 	ComputePipeline::ComputePipeline() : shaderName{ "" } {
 	}
 
-	void ComputePipeline::build() {
+	ComputePipeline::~ComputePipeline() {
+		destroy();
+	}
+
+	ComputePipeline* ComputePipeline::build() {
 		std::string fileLoc = "resources/shaders/spirv/" + shaderName + ".cspv";
 		std::vector<uint8_t> computeShaderData = read_file_to_buffer(fileLoc);
 		VkShaderModule computeShaderModule = create_shader_module(computeShaderData);
@@ -259,11 +273,16 @@ namespace vku {
 
 		vkDestroyShaderModule(device, computeShaderModule, nullptr);
 
+		return this;
 	}
 
 	void ComputePipeline::destroy() {
+		if (pipeline == VK_NULL_HANDLE) {
+			return;
+		}
 		vkDestroyPipeline(device, pipeline, nullptr);
 		vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+		pipeline = VK_NULL_HANDLE;
 	}
 
 	void ComputePipeline::bind(VkCommandBuffer commandBuffer) {

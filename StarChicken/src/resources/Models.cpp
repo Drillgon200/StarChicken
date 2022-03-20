@@ -1,5 +1,5 @@
 #include "Models.h"
-#include "..\VertexFormats.h"
+#include "..\graphics\VertexFormats.h"
 
 namespace geom {
 	Mesh::Mesh(document::DocumentNode* geo) : meshId{ 0 } {

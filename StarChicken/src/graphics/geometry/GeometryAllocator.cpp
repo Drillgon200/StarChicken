@@ -1,9 +1,9 @@
 #include "GeometryAllocator.h"
 #include "..\StagingManager.h"
 #include "..\VertexFormats.h"
-#include "Models.h"
+#include "..\..\resources\Models.h"
 #include "..\..\scene\Scene.h"
-#include "..\..\util\FileDocument.h"
+#include "..\..\resources\FileDocument.h"
 #include "..\RenderPass.h"
 #include "..\..\Engine.h"
 #include "..\..\RenderSubsystem.h"
@@ -342,7 +342,7 @@ namespace vku {
 		renderSet = descSet;
 	}
 
-	void WorldGeometryManager::init(uint32_t startVertSize, uint32_t startIdxSize, uint32_t startSkinDataSize, uint32_t startSkinnedVertSize, uint32_t startFinalIdxSize, UniformTexture2D* depthPyramidUniform) {
+	void WorldGeometryManager::init(uint32_t startVertSize, uint32_t startIdxSize, uint32_t startSkinDataSize, uint32_t startSkinnedVertSize, uint32_t startFinalIdxSize) {
 		geoSize = startVertSize;
 		geoIndexSize = startIdxSize;
 		skinDataSize = startSkinDataSize;
@@ -381,48 +381,26 @@ namespace vku {
 		geoOffsetBuffer = new UniformBuffer<WorldGeometryOffsets>(true, false, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT);
 		cameraBuffer = new UniformBuffer<GpuCamera>(true, true, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT);
 
-		cullingSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, modelTransforms, dispatchModelIds, gpuGeometrySets, triangleCullArgs, gpuGeometry, drawArgs, engine::rendering.minSampler, depthPyramidUniform });
-		drawSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, modelTransforms, dispatchModelIds, gpuGeometrySets, gpuGeometry });
-		worldGeoDataSet = create_descriptor_set({ geoOffsetBuffer, cameraBuffer });
-		skinningSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, gpuGeometry, skinMatrices, skinModelIdsByWorkgroup });
-
-		/*depthRenderPass = new RenderPass();
-		VkAttachmentDescription depthDescription{};
-		depthDescription.format = VK_FORMAT_D32_SFLOAT;
-		depthDescription.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthDescription.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depthDescription.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		depthDescription.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		depthDescription.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		depthDescription.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		depthDescription.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		VkAttachmentReference depthAttachmentRef{};
-		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		depthAttachmentRef.attachment = 0;
-		VkSubpassDescription subpass{};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 0;
-		subpass.pColorAttachments = nullptr;
-		subpass.pDepthStencilAttachment = &depthAttachmentRef;
-		depthRenderPass->create(1, 1, &depthDescription, &subpass);*/
-
-		depthPipeline = new GraphicsPipeline();
-		depthPipeline->name("world_depth").pass(*depthRenderPass, 0).vertex_format(VERTEX_FORMAT_NONE).color_writes(0).descriptor_set(*drawSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t) }).build();
-		renderPipeline = new GraphicsPipeline();
-		renderPipeline->name("world_test").pass(*worldRenderPass, 0).vertex_format(VERTEX_FORMAT_NONE).depth_compare(VK_COMPARE_OP_EQUAL).descriptor_set(*drawSet).descriptor_set(*worldGeoDataSet).descriptor_set(*renderSet).push_constant(VkPushConstantRange{VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t)}).build();
-		objectIdPipeline = new GraphicsPipeline();
-		objectIdPipeline->name("world_id").pass(*objectIdRenderPass, 0).vertex_format(VERTEX_FORMAT_NONE).descriptor_set(*drawSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t) }).build();
-		modelCullPipeline = new ComputePipeline();
-		modelCullPipeline->name("mesh_cull").descriptor_set(*cullingSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_COMPUTE_BIT, 0, 3*sizeof(uint32_t) }).build();
-		triangleCullPipeline = new ComputePipeline();
-		triangleCullPipeline->name("triangle_cull").descriptor_set(*cullingSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_COMPUTE_BIT, 0, 3*sizeof(uint32_t) }).build();
-		skinningPipeline = new ComputePipeline();
-		skinningPipeline->name("mesh_skin").descriptor_set(*skinningSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t) }).build();
-
 		for (uint32_t i = 0; i < NUM_FRAME_DATA; i++) {
 			constexpr uint32_t defaultStagingSize = 128 * 1024;
 			dataStagingBuffer[i] = generalAllocator->alloc_buffer(defaultStagingSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 		}
+	}
+
+	void WorldGeometryManager::create_descriptor_sets(UniformTexture2D* depthPyramidUniform) {
+		cullingSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, modelTransforms, dispatchModelIds, gpuGeometrySets, triangleCullArgs, gpuGeometry, drawArgs, resources::minSampler, depthPyramidUniform });
+		drawSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, modelTransforms, dispatchModelIds, gpuGeometrySets, gpuGeometry });
+		worldGeoDataSet = create_descriptor_set({ geoOffsetBuffer, cameraBuffer });
+		skinningSet = create_descriptor_set({ gpuObjects, gpuMeshes, gpuModels, gpuGeometry, skinMatrices, skinModelIdsByWorkgroup });
+	}
+
+	void WorldGeometryManager::create_pipelines() {
+		depthPipeline = (new GraphicsPipeline())->name("world_depth").pass(*depthRenderPass, 0).vertex_format(VERTEX_FORMAT_NONE).color_writes(0).descriptor_set(*drawSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t) }).build();
+		renderPipeline = (new GraphicsPipeline())->name("world_test").pass(*worldRenderPass, 0).vertex_format(VERTEX_FORMAT_NONE).depth_compare(VK_COMPARE_OP_EQUAL).descriptor_set(*drawSet).descriptor_set(*worldGeoDataSet).descriptor_set(*renderSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t) }).build();
+		objectIdPipeline = (new GraphicsPipeline())->name("world_id").pass(*objectIdRenderPass, 0).vertex_format(VERTEX_FORMAT_NONE).descriptor_set(*drawSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t) }).build();
+		modelCullPipeline = (new ComputePipeline())->name("mesh_cull").descriptor_set(*cullingSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_COMPUTE_BIT, 0, 3 * sizeof(uint32_t) }).build();
+		triangleCullPipeline = (new ComputePipeline())->name("triangle_cull").descriptor_set(*cullingSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_COMPUTE_BIT, 0, 3 * sizeof(uint32_t) }).build();
+		skinningPipeline = (new ComputePipeline())->name("mesh_skin").descriptor_set(*skinningSet).descriptor_set(*worldGeoDataSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(uint32_t) }).build();
 	}
 
 	void WorldGeometryManager::cleanup() {
@@ -449,17 +427,11 @@ namespace vku {
 
 		generalAllocator->free_buffer(buffer);
 
-		renderPipeline->destroy();
 		delete renderPipeline;
-		depthPipeline->destroy();
 		delete depthPipeline;
-		objectIdPipeline->destroy();
 		delete objectIdPipeline;
-		modelCullPipeline->destroy();
 		delete modelCullPipeline;
-		triangleCullPipeline->destroy();
 		delete triangleCullPipeline;
-		skinningPipeline->destroy();
 		delete skinningPipeline;
 
 		for (uint32_t i = 0; i < NUM_FRAME_DATA; i++) {

@@ -19,6 +19,7 @@ namespace vku {
 		VkPipeline pipeline;
 	public:
 		ComputePipeline();
+		~ComputePipeline();
 
 		inline ComputePipeline& name(const char* name) {
 			shaderName = name;
@@ -39,7 +40,7 @@ namespace vku {
 			return pipelineLayout;
 		}
 
-		void build();
+		ComputePipeline* build();
 		void destroy();
 		void bind(VkCommandBuffer commandBuffer);
 	};
@@ -67,6 +68,7 @@ namespace vku {
 		VkPipeline pipeline;
 	public:
 		GraphicsPipeline();
+		~GraphicsPipeline();
 
 		inline GraphicsPipeline& name(const char* name) {
 			shaderName = name;
@@ -140,7 +142,7 @@ namespace vku {
 			return pipelineLayout;
 		}
 
-		void build();
+		GraphicsPipeline* build();
 		void destroy();
 		
 		void bind(VkCommandBuffer commandBuffer);

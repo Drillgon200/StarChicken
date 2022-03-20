@@ -25,6 +25,7 @@ namespace engine {
 
 	class RenderSubsystem;
 	class InputSubsystem;
+	class ResourcesSubsystem;
 
 	//extern job::JobSystem jobSystem;
 	extern job::JobSystem jobSystem;
@@ -35,6 +36,7 @@ namespace engine {
 	extern scene::Scene& scene;
 	extern InputSubsystem& userInput;
 	extern RenderSubsystem& rendering;
+	extern ResourcesSubsystem& resourceManager;
 	extern ui::Gui* mainGui;;
 
 	inline void log(std::string str) {

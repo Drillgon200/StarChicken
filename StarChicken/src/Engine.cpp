@@ -9,9 +9,9 @@
 #include "graphics/RenderPass.h"
 #include "graphics/StagingManager.h"
 #include "graphics/TextureManager.h"
-#include "graphics/geometry/Models.h"
+#include "resources/Models.h"
 #include "graphics/geometry/GeometryAllocator.h"
-#include "util/FileDocument.h"
+#include "resources/FileDocument.h"
 #include "util/Util.h"
 #include "util/MSDFGenerator.h"
 #include "util/FontRenderer.h"
@@ -19,6 +19,7 @@
 #include "InputSubsystem.h"
 #include "scene/Scene.h"
 #include "RenderSubsystem.h"
+#include "ResourcesSubsystem.h"
 
 uint64_t iterations;
 
@@ -35,6 +36,7 @@ namespace engine {
 	scene::Scene sceneSystem;
 	InputSubsystem inputSystem;
 	RenderSubsystem renderSystem;
+	ResourcesSubsystem resourceSubsystem;
 	//Other subsystems go here. Should eventually include stuff like physics, animation, audio, enemy AI, streaming, etc.
 	ui::Gui* mainGui;
 
@@ -42,6 +44,7 @@ namespace engine {
 	scene::Scene& scene{ sceneSystem };
 	InputSubsystem& userInput{ inputSystem };
 	RenderSubsystem& rendering{ renderSystem };
+	ResourcesSubsystem& resourceManager{ resourceSubsystem };
 
 	std::chrono::steady_clock::time_point lastTime;
 
@@ -137,17 +140,21 @@ namespace engine {
 		renderSystem.on_window_resize(cmdBuf, newX, newY);
 		
 		mainGui->resize(static_cast<float>(newX), static_cast<float>(newY));
-		//TODO move to scene renderer, manage with render subsystem
 		scene.framebuffer_resized(cmdBuf, newX, newY);
-		//Make sure the selected object buffer gets cleared after resize.
-		
 	}
 
 	void init_engine() {
 		vku::init_vulkan(resize_callback);
 
+		scene.init();
+		resourceManager.load_uniforms();
 		renderSystem.init();
-		
+		resourceManager.load_descriptor_sets();
+		renderSystem.create_descriptor_sets();
+		resourceManager.load_pipelines();
+		renderSystem.create_pipelines();
+		resourceManager.load_textures();
+
 		//print_memory_info();
 		ui::init();
 		mainGui = new ui::Gui(&scene);
@@ -161,6 +168,7 @@ namespace engine {
 		delete mainGui;
 		scene.cleanup();
 
+		resourceManager.free_resources();
 		renderSystem.cleanup();
 
 		vku::cleanup_vulkan();
@@ -183,16 +191,6 @@ int main() {
 	//util::msdf::generate_MSDF(L"resources/textures/startchickenfont2.svg", L"resources/textures/starchickenfont.msdf", 64, 64, true);
 	//return 0;
 
-	/*vec3f rot{90, 0, 0};
-	vec3f pos{ 0, 0, 0 };
-	mat4f mat;
-	mat.set_identity().rotate(rot.x, {0, 1, 0});
-	std::cout << "regular " << mat << std::endl << std::endl;
-	mat.inverse();
-	std::cout << "inverse " << mat << std::endl << std::endl;
-	mat.set_identity().rotate(-rot.x, { 0, 1, 0 });
-	std::cout << "reverse transform " << mat << std::endl;
-	return 0;*/
 	vku::recompile_modified_shaders(".\\resources\\shaders");
 	engine::init_window();
 	engine::init_engine();

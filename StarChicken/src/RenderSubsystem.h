@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine.h"
+#include "resources/DefaultResources.h"
 #include "scene/Scene.h"
 #include "ui/Gui.h"
 #include "graphics/VkUtil.h"
@@ -35,31 +36,12 @@ namespace engine {
 		vku::UniformStorageImage* finalTexStorageImage;
 		vku::UniformStorageImage* outlineStorageImage;
 
-		//vku::UniformBuffer<MVPMatrices>* mvpMatricesBuffer = nullptr;
 		vku::UniformBuffer<mat4f>* uiProjectionMatrixBuffer = nullptr;
 		vku::UniformBuffer<mat4f>* worldViewProjectionBuffer = nullptr;
 
-		vku::UniformSampler2D* bilinearSampler = nullptr;
-		vku::UniformSampler2D* nearestSampler = nullptr;
-		vku::UniformSampler2D* maxSampler = nullptr;
-		vku::UniformSampler2D* minSampler = nullptr;
 		vku::UniformTexture2DArray* textureArray = nullptr;
 
-		vku::GraphicsPipeline* uiPipeline;
-		vku::GraphicsPipeline* uiLinePipeline;
-		vku::GraphicsPipeline* textPipeline;
-		vku::GraphicsPipeline* colorFullbrightPipeline;
-		vku::GraphicsPipeline* depthPipeline;
-		vku::DescriptorSet* shaderSet;
-		vku::DescriptorSet* worldViewProjectionSet;
-		vku::DescriptorSet* uiSet;
-
 		text::FontRenderer* fontRenderer = nullptr;
-
-		vku::Texture* duckTex = nullptr;
-		uint16_t missingTexIdx;
-		uint16_t whiteTexIdx;
-		uint16_t duckTexIdx;
 
 		bool hasSelectedObjects{ false };
 
@@ -161,7 +143,7 @@ namespace engine {
 				//FRAME DRAW BEGIN//
 
 				//Depth prepass, setup
-				scene.prepare_render_world(depthPreRenderPass);
+				scene.get_renderer().prepare_render_world(depthPreRenderPass);
 				//Render selected objects to id buffer
 				if (!scene.get_selected_objects().empty()) {
 					outlineRenderPass.begin_pass(cmdBuf, objectOutlineFramebuffer);
@@ -174,7 +156,7 @@ namespace engine {
 				}
 				//Main color pass
 				mainRenderPass.begin_pass(cmdBuf, mainFramebuffer);
-				shaderSet->bind(cmdBuf, *scene.geo_manager().get_render_pipeline(), 2);
+				resources::shaderSet->bind(cmdBuf, *scene.get_renderer().geo_manager().get_render_pipeline(), 2);
 				mainGui->render_cameras(vku::WORLD_RENDER_PASS_COLOR);
 				mainRenderPass.end_pass(cmdBuf);
 
@@ -205,10 +187,10 @@ namespace engine {
 				viewport.maxDepth = 1.0F;
 				vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
 				uiRenderPass.begin_pass(cmdBuf, uiFramebuffer);
-				uiPipeline->bind(cmdBuf);
-				uiSet->bind(cmdBuf, *uiPipeline, 0);
+				resources::uiPipeline->bind(cmdBuf);
+				resources::uiSet->bind(cmdBuf, *resources::uiPipeline, 0);
 				ui::draw_gui(cmdBuf);
-				fontRenderer->render_cached_strings(*textPipeline);
+				fontRenderer->render_cached_strings(*resources::textPipeline);
 				uiRenderPass.end_pass(cmdBuf);
 
 				//FRAME DRAW END//
@@ -288,6 +270,7 @@ namespace engine {
 					outlineStorageImage->update_texture(i, objectOutlineFramebuffer.get_color_attachment(0));
 				}
 			}
+			//Make sure the selection buffer gets cleared after the resize.
 			hasSelectedObjects = true;
 		}
 
@@ -299,7 +282,20 @@ namespace engine {
 			util::FileMapping map = util::map_file(L"resources/models/" + name);
 			document::DocumentNode* meshdata = document::parse_document(map.mapping);
 			document::DocumentNode* geometry = meshdata->get_child("geometry")->children[0];
-			return scene.geo_manager().create_mesh(geometry);
+			return scene.get_renderer().geo_manager().create_mesh(geometry);
+		}
+
+		void create_descriptor_sets() {
+			scene.get_renderer().geo_manager().create_descriptor_sets(scene.get_renderer().depthPyramidUniform);
+			scene.get_renderer().geo_manager().set_render_desc_set(resources::shaderSet);
+
+			finalPostSet = vku::create_descriptor_set({ sceneStorageImage, uiStorageImage, finalTexStorageImage, outlineStorageImage, scene.get_renderer().geo_manager().get_object_buffer() });
+		}
+
+		void create_pipelines() {
+			scene.get_renderer().geo_manager().create_pipelines();
+			finalPostPipeline = new vku::ComputePipeline();
+			finalPostPipeline->name("final_post").descriptor_set(*finalPostSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_COMPUTE_BIT, 0, 2 * sizeof(int32_t) }).build();
 		}
 
 		void init() {
@@ -308,10 +304,6 @@ namespace engine {
 			uiProjectionMatrixBuffer = new vku::UniformBuffer<mat4f>(true, false, VK_SHADER_STAGE_VERTEX_BIT);
 			worldViewProjectionBuffer = new vku::UniformBuffer<mat4f>(true, true, VK_SHADER_STAGE_VERTEX_BIT);
 
-			bilinearSampler = new vku::UniformSampler2D(true, true, true, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT);
-			nearestSampler = new vku::UniformSampler2D(false, true, true, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT);
-			maxSampler = new vku::UniformSampler2D(true, false, false, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT, VK_SAMPLER_REDUCTION_MODE_MAX);
-			minSampler = new vku::UniformSampler2D(true, false, false, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT, VK_SAMPLER_REDUCTION_MODE_MIN);
 			textureArray = new vku::UniformTexture2DArray(128);
 
 			create_render_passes();
@@ -323,12 +315,7 @@ namespace engine {
 
 			on_window_resize(cmdBuf, vku::swapChainExtent.width, vku::swapChainExtent.height);
 
-
-			shaderSet = vku::create_descriptor_set({ bilinearSampler, textureArray });
-			worldViewProjectionSet = vku::create_descriptor_set({ worldViewProjectionBuffer });
-			uiSet = vku::create_descriptor_set({ uiProjectionMatrixBuffer, bilinearSampler, textureArray });
-			scene.init(cmdBuf, shaderSet, &mainRenderPass, &depthPreRenderPass, &outlineRenderPass, &mainFramebuffer, &mainDepthFramebuffer);
-			finalPostSet = vku::create_descriptor_set({ sceneStorageImage, uiStorageImage, finalTexStorageImage, outlineStorageImage, scene.geo_manager().get_object_buffer() });
+			scene.get_renderer().init(cmdBuf, &mainRenderPass, &depthPreRenderPass, &outlineRenderPass, &mainFramebuffer, &mainDepthFramebuffer);
 
 			vku::end_command_buffer(cmdBuf);
 			VkSubmitInfo submitInfo{};
@@ -344,18 +331,6 @@ namespace engine {
 			vkQueueWaitIdle(vku::graphicsQueue);
 
 			text::init();
-			uiPipeline = new vku::GraphicsPipeline();
-			uiPipeline->name("ui").pass(uiRenderPass, 0).vertex_format(vku::POSITION_TEX_COLOR_TEXIDX_FLAGS).descriptor_set(*uiSet).build();
-			uiLinePipeline = new vku::GraphicsPipeline();
-			uiLinePipeline->name("ui_line").pass(uiRenderPass, 0).vertex_format(vku::POSITION_COLOR).descriptor_set(*uiSet).build();
-			textPipeline = new vku::GraphicsPipeline();
-			textPipeline->name("text").pass(uiRenderPass, 0).vertex_format(vku::POSITION_TEX).descriptor_set(*text::textDescSet).build();
-			colorFullbrightPipeline = new vku::GraphicsPipeline();
-			colorFullbrightPipeline->name("colored_fullbright").pass(mainRenderPass, 0).vertex_format(vku::POSITION).descriptor_set(*worldViewProjectionSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_FRAGMENT_BIT, 0, 4 * sizeof(float) + sizeof(int32_t) }).build();
-			depthPipeline = new vku::GraphicsPipeline();
-			depthPipeline->name("depth").pass(depthPreRenderPass, 0).vertex_format(vku::POSITION).descriptor_set(*worldViewProjectionSet).build();
-			finalPostPipeline = new vku::ComputePipeline();
-			finalPostPipeline->name("final_post").descriptor_set(*finalPostSet).push_constant(VkPushConstantRange{ VK_SHADER_STAGE_COMPUTE_BIT, 0, 2 * sizeof(int32_t) }).build();
 
 			//vku::create_descriptor_sets();
 
@@ -368,16 +343,9 @@ namespace engine {
 			geom::Mesh* testMesh = load_mesh(L"testmodel2_9.dmf");
 			geom::Model* testModel = scene.new_instance(testMesh);
 
-			text::create_text_quad();
+			text::create_text_quad();             
 			fontRenderer = new text::FontRenderer();
 			fontRenderer->load(L"starchickenfont.msdf");
-
-			missingTexIdx = textureArray->add_texture(vku::missingTexture);
-			whiteTexIdx = textureArray->add_texture(vku::whiteTexture);
-			duckTex = vku::load_texture(L"orbus.dtf", 0);
-			duckTexIdx = textureArray->add_texture(duckTex);
-
-			//load_model(testBuffer, L"testmodel.dmf");
 
 			vku::end_command_buffer(vku::transferCommandBuffer);
 
@@ -396,25 +364,21 @@ namespace engine {
 			}
 
 		}
+		void finish_init() {
+
+		}
 		void cleanup() {
-			vku::delete_texture(duckTex);
 			uiFramebuffer.destroy();
 			mainFramebuffer.destroy();
 			mainDepthFramebuffer.custom_depth(nullptr);
 			mainDepthFramebuffer.destroy();
 			objectOutlineFramebuffer.destroy();
-			finalTexture->destroy();
 			delete finalTexture;
-			fontRenderer->destroy();
 			delete fontRenderer;
 
 			//delete mvpMatricesBuffer;
 			delete uiProjectionMatrixBuffer;
 			delete worldViewProjectionBuffer;
-			delete bilinearSampler;
-			delete nearestSampler;
-			delete maxSampler;
-			delete minSampler;
 			delete textureArray;
 			//delete lightingBuffer;
 			delete sceneStorageImage;
@@ -422,17 +386,6 @@ namespace engine {
 			delete finalTexStorageImage;
 			delete outlineStorageImage;
 
-			uiPipeline->destroy();
-			uiLinePipeline->destroy();
-			textPipeline->destroy();
-			colorFullbrightPipeline->destroy();
-			depthPipeline->destroy();
-			finalPostPipeline->destroy();
-			delete uiPipeline;
-			delete uiLinePipeline;
-			delete textPipeline;
-			delete colorFullbrightPipeline;
-			delete depthPipeline;
 			delete finalPostPipeline;
 
 			text::cleanup();

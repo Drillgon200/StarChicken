@@ -45,5 +45,4 @@ namespace vku {
 	};
 
 	Texture* load_texture(std::wstring textureName, VkImageUsageFlags extraUsage);
-	void delete_texture(Texture* tex);
 }

@@ -171,7 +171,7 @@ namespace ui {
 			nineSlice.ySlice[0] = 0.2F;
 			nineSlice.ySlice[1] = 0.8F;
 			AxisAlignedBB2Df box = boundingBox.expand(-PANEL_PADDING);
-			draw_nine_sliced(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY, 0, false, 0.26F, 0.26F, 0.26F, 1.0F, nineSlice, engine::rendering.whiteTexIdx, 0);
+			draw_nine_sliced(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY, 0, false, 0.26F, 0.26F, 0.26F, 1.0F, nineSlice, resources::whiteTexIdx, 0);
 			for (uint32_t i = 0; i < widgets.size(); i++) {
 				widgets[i].render();
 			}
@@ -390,7 +390,7 @@ namespace ui {
 	}
 
 	PanelSceneView::PanelSceneView(Gui* gui, Panel** top, AxisAlignedBB2Df bounds) : Panel(gui, top, bounds), prevCamOrbitOffset{ 1.0F }{
-		camera = new scene::Camera(gui->scene, gui->scene->get_framebuffer());
+		camera = new scene::Camera(gui->scene, gui->scene->get_renderer().get_framebuffer());
 		camera->set_fov(90.0F).set_position({ 0, 0, 0 }).set_orbit_offset(length(vec3f{5, 5, 5})).set_rotation({ -45, 45, 0 }).set_projection_type(scene::CAMERA_PROJECTION_PERSPECTIVE).set_viewport(boundingBox.minX, boundingBox.minY, boundingBox.width(dm::Axis::X), boundingBox.width(dm::Axis::Y)).update_cam_matrices();
 		gui->scene->add_camera(camera);
 	}
@@ -427,7 +427,7 @@ namespace ui {
 		nineSlice.ySlice[0] = 0.2F;
 		nineSlice.ySlice[1] = 0.8F;
 		AxisAlignedBB2Df box = boundingBox.expand(-PANEL_PADDING);
-		draw_nine_sliced(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY, 0, false, 0.0F, 0.0F, 0.0F, 0.0F, nineSlice, engine::rendering.whiteTexIdx, 0);
+		draw_nine_sliced(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY, 0, false, 0.0F, 0.0F, 0.0F, 0.0F, nineSlice, resources::whiteTexIdx, 0);
 		for (uint32_t i = 0; i < widgets.size(); i++) {
 			widgets[i].render();
 		}
@@ -526,7 +526,7 @@ namespace ui {
 	}
 
 	void PanelSceneView::render_cameras(vku::WorldRenderPass pass) {
-		gui->scene->render_world(*camera, pass);
+		gui->scene->get_renderer().render_world(*camera, pass);
 	}
 
 	Panel* PanelSceneView::clone() {
@@ -569,7 +569,7 @@ namespace ui {
 		draw_rect(x, y, width, height, zLevel, uMin, vMin, uMax, vMax, 1.0F, 1.0F, 1.0F, 1.0F, texIdx, flags);
 	}
 	void draw_rect(float x, float y, float width, float height, float zLevel, float uMin, float vMin, float uMax, float vMax, uint16_t flags) {
-		draw_rect(x, y, width, height, zLevel, uMin, vMin, uMax, vMax, engine::rendering.whiteTexIdx, flags);
+		draw_rect(x, y, width, height, zLevel, uMin, vMin, uMax, vMax, resources::whiteTexIdx, flags);
 	}
 
 	void draw_xtiled_rect(float x, float y, float width, float height, float tileWidth, float zLevel, float uMin, float vMin, float uMax, float vMax, vec4ui8 color, uint16_t texIdx, uint16_t flags) {

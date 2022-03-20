@@ -24,6 +24,7 @@ namespace vku {
 	{
 	}
 	Texture::~Texture() {
+		destroy();
 		delete[] mipImageViews;
 	}
 
@@ -259,10 +260,4 @@ namespace vku {
 		util::unmap_file(mapping);
 		return tex;
 	}
-
-	void delete_texture(Texture* tex) {
-		tex->destroy();
-		delete tex;
-	}
-
 }

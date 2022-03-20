@@ -50,6 +50,7 @@ namespace text {
 		GlyphData glyphData[0xFF];
 	public:
 		FontRenderer();
+		~FontRenderer();
 
 		void draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z, float r, float g, float b, float a, uint32_t flags);
 		void draw_string(const char* str, float fontScale, float characterSpacing, float x, float y, float z, uint32_t flags);

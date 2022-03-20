@@ -1,8 +1,8 @@
 #pragma once
-#include "GeometryAllocator.h"
-#include "GPUModels.h"
-#include "..\..\util\DrillMath.h"
-#include "..\..\util\FileDocument.h"
+#include "..\graphics\geometry\GeometryAllocator.h"
+#include "..\graphics\geometry\GPUModels.h"
+#include "..\util\DrillMath.h"
+#include "..\resources\FileDocument.h"
 
 namespace geom {
 	class SelectableObject {

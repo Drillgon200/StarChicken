@@ -73,11 +73,5 @@ namespace engine {
 			windowing::set_mouse(pos);
 			mousePos = windowing::get_mouse();
 		}
-		void init() {
-
-		}
-		void cleanup() {
-
-		}
 	};
 }

@@ -54,7 +54,7 @@
     <ClCompile Include="src\graphics\DeviceMemoryAllocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\util\FileDocument.cpp">
+    <ClCompile Include="src\resources\FileDocument.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\util\Util.cpp">
@@ -81,13 +81,19 @@
     <ClCompile Include="src\graphics\DynamicBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\geometry\Models.cpp">
+    <ClCompile Include="src\resources\Models.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\geometry\GeometryAllocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\Tessellator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\resources\DefaultResources.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scene\SceneRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -185,7 +191,7 @@
     <ClInclude Include="src\util\Util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\util\FileDocument.h">
+    <ClInclude Include="src\resources\FileDocument.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\util\Windowing.h">
@@ -209,7 +215,7 @@
     <ClInclude Include="src\graphics\DynamicBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\graphics\geometry\Models.h">
+    <ClInclude Include="src\resources\Models.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\graphics\geometry\GeometryAllocator.h">
@@ -221,13 +227,19 @@
     <ClInclude Include="src\graphics\Tessellator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene\SceneRenderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\RenderSubsystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\InputSubsystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ResourcesSubsystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\resources\DefaultResources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene\SceneRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -5,7 +5,8 @@
 #include "../graphics/VertexFormats.h"
 #include "../graphics/geometry/GeometryAllocator.h"
 #include "../EntityComponentSystem.h"
-#include "../graphics/geometry/Models.h"
+#include "../resources/Models.h"
+#include "SceneRenderer.h"
 
 namespace vku {
 	class Framebuffer;
@@ -19,6 +20,7 @@ namespace scene {
 	class Scene {
 	private:
 		friend class Camera;
+		friend class SceneRenderer;
 		std::vector<Camera*> cameras;
 		//Contains every model present in this scene
 		std::vector<geom::Model*> sceneModels;
@@ -29,21 +31,11 @@ namespace scene {
 		std::vector<geom::SelectableObject*> selectedObjects{};
 
 		ecs::ComponentSystem entityComponentSystem;
-		vku::WorldGeometryManager geometryManager;
-		vku::Framebuffer* framebuffer;
-		vku::Framebuffer* depthFramebuffer;
 
-		vku::Texture* depthPyramid;
-		//This uniform is a static object, not recreated on resize
-		vku::UniformTexture2D* depthPyramidUniform{ nullptr };
-		vku::UniformTexture2D** depthPyramidReadUniforms;
-		vku::UniformStorageImage** depthPyramidWriteUniforms;
-		vku::DescriptorSet** depthPyramidDownsampleSets;
-		vku::ComputePipeline* depthPyramidDownsample;
-		uint32_t depthPyramidLevels;
+		SceneRenderer* renderer;
 	public:
 
-		void init(VkCommandBuffer cmdBuf, vku::DescriptorSet* mainShaderSet, vku::RenderPass* renderPass, vku::RenderPass* depthPass, vku::RenderPass* objectIdPass, vku::Framebuffer* mainFramebuffer, vku::Framebuffer* mainDepthFramebuffer);
+		void init();
 		void cleanup();
 		void add_model(geom::Model* model);
 		geom::Model* new_instance(geom::Mesh* mesh);
@@ -59,19 +51,11 @@ namespace scene {
 			return activeObject;
 		}
 
-		inline vku::WorldGeometryManager& geo_manager() {
-			return geometryManager;
-		}
-
-		inline vku::Framebuffer* get_framebuffer() {
-			return framebuffer;
+		inline SceneRenderer& get_renderer() {
+			return *renderer;
 		}
 
 		void framebuffer_resized(VkCommandBuffer cmdBuf, uint32_t newX, uint32_t newY);
-
-		void generate_depth_pyramid(VkCommandBuffer cmdBuf);
-		void prepare_render_world(vku::RenderPass& renderPass);
-		void render_world(Camera& cam, vku::WorldRenderPass pass);
 	};
 
 	enum CameraProjectionType {
@@ -266,14 +250,14 @@ namespace scene {
 		void add_render_model(geom::Model& model) {
 			if (geometrySets.empty() || (geometrySets.back().setModelCount >= 256)) {
 				geometrySets.push_back(vku::GeometrySet{});
-				scene->geometryManager.alloc_geo_set(&geometrySets.back());
+				scene->get_renderer().geo_manager().alloc_geo_set(&geometrySets.back());
 			}
 			geometrySets.back().add_model(model);
 			if (model.get_selection() > 0) {
 				if (selectedSets.empty() || (selectedSets.back().setModelCount >= 256)) {
 					selectedSets.push_back(vku::GeometrySet{});
 					//std::cout << selectedSets.back().setModelCount << std::endl;
-					scene->geometryManager.alloc_geo_set(&selectedSets.back());
+					scene->get_renderer().geo_manager().alloc_geo_set(&selectedSets.back());
 				}
 				selectedSets.back().add_model(model);
 			}

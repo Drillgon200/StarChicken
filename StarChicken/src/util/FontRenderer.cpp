@@ -66,7 +66,7 @@ namespace text {
 		stringMatrix.set_identity();
 		textDataBuffer = new vku::UniformSSBO<GlyphRenderData>(MAX_CHAR_RENDER_COUNT, true, VK_SHADER_STAGE_VERTEX_BIT);
 		stringDataBuffer = new vku::UniformSSBO<StringRenderData>(MAX_STRING_RENDER_COUNT, true, VK_SHADER_STAGE_VERTEX_BIT);
-		textDescSet = vku::create_descriptor_set({ engine::rendering.bilinearSampler, engine::rendering.textureArray, textDataBuffer, stringDataBuffer });
+		textDescSet = vku::create_descriptor_set({ resources::bilinearSampler, engine::rendering.textureArray, textDataBuffer, stringDataBuffer });
 
 		indirectDrawBuffer = vku::generalAllocator->alloc_buffer(sizeof(VkDrawIndirectCommand) * MAX_STRING_RENDER_COUNT, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	}
@@ -97,6 +97,10 @@ namespace text {
 		for (uint32_t i = 0; i < 0xFF; i++) {
 			glyphData[i] = GlyphData{ nullptr, 0, 0, 0 };
 		}
+	}
+
+	FontRenderer::~FontRenderer() {
+		destroy();
 	}
 
 	bool is_whitespace(char c) {
@@ -249,8 +253,9 @@ namespace text {
 		for (uint32_t i = 0; i < orderedChars.size(); i++) {
 			char glyph = orderedChars[i];
 			GlyphData& gdata = glyphData[glyph];
-			vku::delete_texture(gdata.texture);
+			delete gdata.texture;
 			engine::rendering.textureArray->free_descriptor_slot(gdata.textureArrayIdx);
 		}
+		orderedChars.clear();
 	}
 }

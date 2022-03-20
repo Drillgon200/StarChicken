@@ -198,7 +198,9 @@
     <ClCompile Include="src\graphics\DeviceMemoryAllocator.cpp" />
     <ClCompile Include="src\graphics\DynamicBuffer.cpp" />
     <ClCompile Include="src\graphics\Framebuffer.cpp" />
-    <ClCompile Include="src\graphics\geometry\Models.cpp" />
+    <ClCompile Include="src\scene\SceneRenderer.cpp" />
+    <ClCompile Include="src\resources\DefaultResources.cpp" />
+    <ClCompile Include="src\resources\Models.cpp" />
     <ClCompile Include="src\graphics\GraphicsPipeline.cpp" />
     <ClCompile Include="src\graphics\RenderPass.cpp" />
     <ClCompile Include="src\graphics\geometry\GeometryAllocator.cpp" />
@@ -213,7 +215,7 @@
     <ClCompile Include="src\scene\Scene.cpp" />
     <ClCompile Include="src\ui\Gui.cpp" />
     <ClCompile Include="src\util\DrillMath.cpp" />
-    <ClCompile Include="src\util\FileDocument.cpp" />
+    <ClCompile Include="src\resources\FileDocument.cpp" />
     <ClCompile Include="src\util\FontRenderer.cpp" />
     <ClCompile Include="src\util\MSDFGenerator.cpp" />
     <ClCompile Include="src\util\Util.cpp" />
@@ -270,7 +272,9 @@
     <ClInclude Include="src\graphics\DynamicBuffer.h" />
     <ClInclude Include="src\graphics\Framebuffer.h" />
     <ClInclude Include="src\graphics\geometry\GPUModels.h" />
-    <ClInclude Include="src\graphics\geometry\Models.h" />
+    <ClInclude Include="src\scene\SceneRenderer.h" />
+    <ClInclude Include="src\resources\DefaultResources.h" />
+    <ClInclude Include="src\resources\Models.h" />
     <ClInclude Include="src\graphics\GraphicsPipeline.h" />
     <ClInclude Include="src\graphics\RenderPass.h" />
     <ClInclude Include="src\graphics\geometry\GeometryAllocator.h" />
@@ -284,11 +288,11 @@
     <ClInclude Include="src\JobSystem.h" />
     <ClInclude Include="src\Profiling.h" />
     <ClInclude Include="src\RenderSubsystem.h" />
+    <ClInclude Include="src\ResourcesSubsystem.h" />
     <ClInclude Include="src\scene\Scene.h" />
-    <ClInclude Include="src\scene\SceneRenderer.h" />
     <ClInclude Include="src\ui\Gui.h" />
     <ClInclude Include="src\util\DrillMath.h" />
-    <ClInclude Include="src\util\FileDocument.h" />
+    <ClInclude Include="src\resources\FileDocument.h" />
     <ClInclude Include="src\util\FontRenderer.h" />
     <ClInclude Include="src\util\MSDFGenerator.h" />
     <ClInclude Include="src\util\Util.h" />
